@@ -306,6 +306,23 @@ If `{article_id}.kg_candidates.json` is provided, update or emit a KG Review Upd
 Output: KG Review Update table/block.
 ```
 
+#### E5. Structured Claim Verification Contract (JSON + Markdown)
+```
+Claim Verification output must be emitted in two synchronized forms:
+
+1) Authoritative JSON contract (required):
+   - Conform to `shared/contracts/pipeline/claim_verification_report.schema.json`
+   - Include stable claim identifiers (`claim_id`, `claim_registry_row`)
+   - Include deterministic KG update payload (`kg_review_update.kg_item_id`, old/new status)
+   - Include confidence and rationale for every claim row
+
+2) Human-readable markdown view (required):
+   - Derived from the JSON rows (table + summary)
+   - Keep backward-compatible table rendering for reviewers
+
+Fail fast: if required JSON fields are missing, stop and return HANDOFF_INCOMPLETE.
+```
+
 #### Claim Verdict Taxonomy
 ```
 | Verdict              | Severity | Definition                                               |
@@ -424,6 +441,54 @@ The following patterns are PROHIBITED in integrity reports:
 | MAJOR_DISTORTION | X | X% |
 | UNVERIFIABLE | X | X% |
 | UNVERIFIABLE_ACCESS | X | X% |
+
+## Claim Verification Contract (JSON, authoritative)
+
+```json
+{
+  "schema_version": "1.0.0",
+  "report_id": "cvr-...",
+  "article_id": "article-...",
+  "run_id": "run-...",
+  "mode": "pre-review",
+  "generated_at": "2026-05-19T18:10:00Z",
+  "summary": {
+    "total_claims_checked": 10,
+    "verdict_counts": {
+      "VERIFIED": 8,
+      "MINOR_DISTORTION": 1,
+      "MAJOR_DISTORTION": 0,
+      "UNVERIFIABLE": 0,
+      "UNVERIFIABLE_ACCESS": 1
+    },
+    "overall_verdict": "PASS_WITH_NOTES"
+  },
+  "claims": [
+    {
+      "claim_id": "claim:article-123:c001",
+      "claim_registry_row": 1,
+      "claim_text": "...",
+      "section": "...",
+      "source_anchor": "sec:discussion:p1",
+      "cited_source_ids": ["S02"],
+      "verdict": "VERIFIED",
+      "severity": "NONE",
+      "confidence": 0.92,
+      "rationale": "...",
+      "kg_review_update": {
+        "kg_item_id": "claim:article-123:c001",
+        "old_status": "in_review",
+        "new_status": "accepted"
+      }
+    }
+  ]
+}
+```
+
+## Claim Verification Report (Markdown view, backward-compatible)
+| # | Claim ID | Claim | Source ID(s) | Section | Verdict | Detail |
+|---|----------|-------|--------------|---------|---------|--------|
+| 1 | claim:... | [claim text] | [S02] | [section] | VERIFIED | Exact match |
 
 ## KG Review Update
 

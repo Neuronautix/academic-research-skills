@@ -155,6 +155,15 @@ When the pipeline provides or requires `{article_id}.kg_candidates.json`, includ
 
 Use the KG handoff protocol from `academic-pipeline/references/kg_handoff_protocol.md`: new claims/concepts/evidence start as `pending`, changed claims reset to `pending` or `needs_revision` unless already re-verified, removed items become `rejected` with an obsolete note, and verified unchanged claims may remain `accepted`.
 
+When creating or updating KG candidates, emit graph-ready fields directly (do not rely on post-hoc parsing):
+- stable item IDs and stable edge IDs
+- explicit claim→evidence→concept links (`links[]` + `related_*_ids`)
+- contradiction/support polarity labels on edges
+- normalized concept labels (`canonical_label`) + aliases
+- per-item confidence + confidence rationale
+- source anchors and citation identifiers
+- reviewer decision object (`decision_by`, `decision_at`, `rationale`)
+
 ## Output Format
 
 ```markdown

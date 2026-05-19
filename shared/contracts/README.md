@@ -76,3 +76,17 @@ orchestrator agent reads at every per-agent audit gate.
   spec §3.7 A1 / A2 / A5 / A6.
 
 Spec: `docs/design/2026-04-30-ars-v3.6.7-step-6-orchestrator-hooks-spec.md` §3.
+
+## KG + Claim Verification handoff contracts (v3.7.0+)
+
+- `kg/ars_handoff.schema.json` — strict KG handoff contract for `{article_id}.kg_candidates.json` with stable object IDs, explicit edge list (`links[]`), source anchors, citation IDs, reviewer decisions, confidence+rationale, and run metadata.
+- `pipeline/claim_verification_report.schema.json` — structured Claim Verification output contract (machine-readable JSON source-of-truth, markdown view optional) with deterministic KG update fields.
+
+Validators:
+
+- `scripts/check_kg_handoff.py` (schema + semantic invariants)
+- `scripts/check_claim_verification_report.py` (schema + semantic invariants)
+
+Optional package builder:
+
+- `scripts/build_kg_ready_export.py` — bundles article + validated KG handoff + claim verification + manifest.

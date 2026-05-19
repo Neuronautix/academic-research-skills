@@ -753,6 +753,51 @@ Ordering: chronological by `generated_at`. A Stage 2.5 FAIL followed by backfill
 
 ---
 
+## Schema 13 — KG Handoff + Claim Verification Contracts (v3.7.0+)
+
+**Source of truth schemas**:
+
+- `shared/contracts/kg/ars_handoff.schema.json`
+- `shared/contracts/pipeline/claim_verification_report.schema.json`
+
+**Purpose**: make KG handoff and Claim Verification artifacts machine-checkable at runtime (not post-hoc markdown heuristics).
+
+### KG handoff required contract (runtime artifact)
+
+`{article_id}.kg_candidates.json` must carry:
+
+- stable item IDs + stable edge IDs
+- explicit claim↔evidence↔concept links (`links[]`) with contradiction/support polarity labels
+- source anchors and citation identifiers
+- reviewer decision payload (`review_decision`)
+- confidence + rationale fields
+- run metadata (`run_metadata`)
+
+Validator: `scripts/check_kg_handoff.py` (schema + semantic checks).
+
+### Claim Verification required contract (runtime artifact)
+
+Claim verification must emit JSON that carries:
+
+- stable claim identifiers (`claim_id`, `claim_registry_row`)
+- deterministic KG update fields (`kg_review_update.kg_item_id`, old/new status)
+- verdict/severity counts consistent with per-row data
+- confidence + rationale fields
+
+Markdown remains for human review but JSON is authoritative.
+
+Validator: `scripts/check_claim_verification_report.py` (schema + semantic checks).
+
+### Optional export package
+
+When requested, build a KG-ready package containing article + KG handoff + claim verification + manifest:
+
+- `scripts/build_kg_ready_export.py`
+
+This command hard-fails on validator errors before export.
+
+---
+
 ## Validation Rules
 
 1. **Required field check**: All schema fields marked without "(optional)" or "No" in the Required column are REQUIRED. Consumer agents MUST verify all required fields are present before proceeding

@@ -4,7 +4,7 @@
 
 Synchronize the manuscript artifact (`article.md`) with a structured KG candidate artifact (`{article_id}.kg_candidates.json`) during the ARS writing, integrity, revision, and finalization stages. The KG handoff is a first-class pipeline deliverable, not an end-of-run post-processing step.
 
-The handoff file must conform to `kg_layer/schemas/ars_handoff_schema.json` and should be updated whenever article claims, concepts, evidence, or review decisions change.
+The handoff file must conform to `shared/contracts/kg/ars_handoff.schema.json` and should be updated whenever article claims, concepts, evidence, or review decisions change.
 
 ## Required Filename
 
@@ -31,13 +31,16 @@ The root object contains:
 
 | Field | Requirement |
 |---|---|
+| `schema_version` | Required; currently `1.0.0` |
 | `article_id` | Recommended; stable per article |
 | `title` | Recommended; current article title |
 | `run_id` | Recommended for traceability |
 | `source_document` | Required; normally `article.md` or the current manuscript artifact path |
+| `run_metadata` | Required; stage, ARS version, generator agent, timestamp |
 | `items` | Required; array of KG candidates |
+| `links` | Required; explicit claim↔evidence↔concept edge list with polarity |
 
-Each item must include fields compatible with `ars_handoff_schema.json`:
+Each item must include fields compatible with `shared/contracts/kg/ars_handoff.schema.json`:
 
 | Field | Requirement |
 |---|---|
@@ -45,12 +48,16 @@ Each item must include fields compatible with `ars_handoff_schema.json`:
 | `type` | Required; one of `Paper`, `Concept`, `Claim`, `Evidence` |
 | `source_document` | Required; same manuscript artifact or specific source artifact |
 | `source_section` | Required; section heading or local label |
+| `source_anchor` | Required; deterministic section/paragraph anchor for stable source mapping |
 | `supporting_quote_or_span` | Required; exact manuscript span supporting the item |
+| `source_citation_id` | Required; stable citation identifier used in manuscript/verification |
 | `confidence` | Required; numeric value from `0.0` to `1.0` |
+| `confidence_rationale` | Required; why this confidence value was assigned |
 | `extraction_method` | Required; use `ars_hitl` for ARS-authored/reviewed candidates unless a more specific method is recorded |
 | `review_status` | Required; lifecycle value below |
-| `reviewer` | Optional; reviewer/agent/human identity |
-| `reviewed_at` | Optional; ISO 8601 timestamp for review decisions |
+| `review_decision` | Required; `{decision_by, decision_at, rationale}` reviewer decision payload |
+| `reviewer` | Optional; redundant shorthand for reviewer/agent/human identity |
+| `reviewed_at` | Optional; redundant shorthand ISO 8601 timestamp for review decisions |
 | `reviewer_notes` | Optional; concise rationale, change note, or obsolete marker |
 | `article_id` | Optional item-level propagation |
 | `run_id` | Optional item-level propagation |
@@ -62,6 +69,8 @@ Each item must include fields compatible with `ars_handoff_schema.json`:
 | `iri` | Optional; stable ontology IRI when one is known or assigned, using an `http` or `https` identifier |
 
 Additional item properties are allowed by the schema when needed for local traceability, but required schema fields must remain present.
+
+The `links[]` array is the authoritative graph edge contract (not inferred post-hoc). Each link carries `relation_type`, `polarity` (`support` / `contradiction` / `neutral`), `confidence`, and `rationale`.
 
 ## Ontology-Aware Field Guidance
 
@@ -78,12 +87,13 @@ Populate ontology-aware optional fields whenever the information is available fr
 Semantic validation is stricter than schema validation. Before finalization or publishing, the handoff should satisfy these rules:
 
 - IDs are unique across the validated handoff set, and every `related_evidence_ids` or `related_concept_ids` value points to an existing item ID.
+- Link IDs are unique, and every `links[].from_id` / `links[].to_id` points to an existing item ID.
 - No accepted `Claim` may be unsupported. Accepted claims require at least one `related_evidence_ids` entry unless `reviewer_notes` explicitly explains why the claim is accepted without linked evidence.
 - Evidence should not be orphaned. Every current `Evidence` item should be referenced by at least one `Claim`, or its `reviewer_notes` should explain why it remains in the handoff.
 - Accepted `Claim` items should include `source_citation` so the KG can distinguish the article's claim text from the external source that verifies it.
 - Concept labels must be canonical and stable. Duplicate `canonical_label` plus `supporting_quote_or_span` pairs should be merged or marked as intentional aliases.
 - IRIs must remain stable and should look like `http` or `https` ontology identifiers when present.
-- `confidence` must be numeric from `0.0` to `1.0`, and `review_status` must use the controlled lifecycle values in this protocol.
+- `confidence` must be numeric from `0.0` to `1.0`, `confidence_rationale` must be non-empty, and `review_status` must use the controlled lifecycle values in this protocol.
 - Distinguish article claims from source claims: a `Claim` represents what the article asserts, while `Evidence` and `source_citation` identify the source-backed support for that assertion. Do not encode a quoted source finding as an accepted article claim unless the article itself makes that claim.
 
 ## Stable ID Policy
@@ -168,7 +178,7 @@ Do not silently delete obsolete items during the pipeline; preserve them as `rej
 Before Stage 5 completes, confirm:
 
 - [ ] `article.md` is the final verified manuscript.
-- [ ] `{article_id}.kg_candidates.json` exists and validates against `kg_layer/schemas/ars_handoff_schema.json`.
+- [ ] `{article_id}.kg_candidates.json` exists and validates against `shared/contracts/kg/ars_handoff.schema.json`.
 - [ ] All current `Claim`, `Concept`, and `Evidence` items have current `supporting_quote_or_span` values from `article.md`.
 - [ ] Accepted items correspond to unchanged, verified manuscript content.
 - [ ] Removed or superseded items are retained as `rejected` with `reviewer_notes`.

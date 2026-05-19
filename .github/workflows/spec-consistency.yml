@@ -163,3 +163,18 @@ jobs:
           pip install pytest pyyaml jsonschema
           pytest scripts/test_run_codex_audit_e2e.py -v
 
+      - name: Validate KG handoff + claim verification contract fixtures
+        env:
+          PYTHONPATH: .
+        run: |
+          python3 scripts/check_kg_handoff.py tests/fixtures/kg_contract/good_kg_handoff.json
+          python3 scripts/check_claim_verification_report.py tests/fixtures/kg_contract/good_claim_verification_report.json
+
+      - name: Run KG handoff / claim verification / KG-ready export unit tests
+        env:
+          PYTHONPATH: .
+        run: |
+          python3 -m unittest \
+            scripts.test_check_kg_handoff \
+            scripts.test_check_claim_verification_report \
+            scripts.test_build_kg_ready_export -v

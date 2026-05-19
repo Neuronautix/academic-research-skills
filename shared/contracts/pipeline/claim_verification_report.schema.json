@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ars.local/schemas/pipeline/claim_verification_report.schema.json",
+  "title": "ARS Claim Verification Report Contract",
+  "description": "Machine-readable claim verification report emitted by integrity verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "article_id",
+    "run_id",
+    "mode",
+    "generated_at",
+    "summary",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "report_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "article_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "pre-review",
+        "final-check"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_claims_checked",
+        "verdict_counts",
+        "overall_verdict"
+      ],
+      "properties": {
+        "total_claims_checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "overall_verdict": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "PASS_WITH_NOTES",
+            "FAIL"
+          ]
+        },
+        "verdict_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "VERIFIED",
+            "MINOR_DISTORTION",
+            "MAJOR_DISTORTION",
+            "UNVERIFIABLE",
+            "UNVERIFIABLE_ACCESS"
+          ],
+          "properties": {
+            "VERIFIED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "MINOR_DISTORTION": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "MAJOR_DISTORTION": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "UNVERIFIABLE": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "UNVERIFIABLE_ACCESS": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/$defs/claim_row"
+      }
+    },
+    "markdown_view": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "claim_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_id",
+        "claim_registry_row",
+        "claim_text",
+        "section",
+        "source_anchor",
+        "cited_source_ids",
+        "verdict",
+        "severity",
+        "confidence",
+        "rationale",
+        "kg_review_update"
+      ],
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "pattern": "^claim:.+:.+$"
+        },
+        "claim_registry_row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "claim_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cited_source_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "VERIFIED",
+            "MINOR_DISTORTION",
+            "MAJOR_DISTORTION",
+            "UNVERIFIABLE",
+            "UNVERIFIABLE_ACCESS"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "MINOR",
+            "MEDIUM",
+            "SERIOUS"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concept_links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "concept_id",
+              "relation_label"
+            ],
+            "properties": {
+              "concept_id": {
+                "type": "string",
+                "pattern": "^concept:.+:.+$"
+              },
+              "relation_label": {
+                "type": "string",
+                "enum": [
+                  "support",
+                  "contradiction",
+                  "neutral"
+                ]
+              }
+            }
+          }
+        },
+        "kg_review_update": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kg_item_id",
+            "old_status",
+            "new_status"
+          ],
+          "properties": {
+            "kg_item_id": {
+              "type": "string",
+              "pattern": "^claim:.+:.+$"
+            },
+            "old_status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "in_review",
+                "accepted",
+                "rejected",
+                "needs_revision"
+              ]
+            },
+            "new_status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "in_review",
+                "accepted",
+                "rejected",
+                "needs_revision"
+              ]
+            },
+            "reviewer_notes": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
