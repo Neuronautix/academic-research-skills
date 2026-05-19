@@ -38,15 +38,47 @@ Verifies that quantitative and factual claims in the paper are accurately suppor
 - Mode 1 (pre-review): 30% random sample of claims (minimum 10 claims)
 - Mode 2 (final-check): 100% of claims
 
-## Output Format
+## Output Contract
 
-### Claim Verification Report
+Primary output is machine-readable JSON conforming to:
+
+- `shared/contracts/pipeline/claim_verification_report.schema.json`
+
+Markdown remains required as a human-readable view, but JSON is the source of truth.
+
+### JSON (authoritative)
+
+Required top-level fields:
+
+- `schema_version` (`1.0.0`)
+- `report_id`
+- `article_id`
+- `run_id`
+- `mode` (`pre-review` / `final-check`)
+- `generated_at`
+- `summary` (`total_claims_checked`, `verdict_counts`, `overall_verdict`)
+- `claims[]`
+
+Each `claims[]` row must include:
+
+- stable identifiers: `claim_id` and `claim_registry_row`
+- `claim_text`, `section`, `source_anchor`, `cited_source_ids`
+- `verdict`, `severity`, `confidence`, `rationale`
+- `kg_review_update` (`kg_item_id`, `old_status`, `new_status`, optional notes)
+
+Optional `markdown_view` may carry the rendered markdown directly.
+
+### Markdown (human view)
+
+The markdown view must be derivable from the JSON rows:
+
+#### Claim Verification Report
 | # | Claim | Source | Section | Verdict | Detail |
 |---|-------|-------|---------|---------|--------|
 | 1 | [claim text] | [source] | [section] | VERIFIED | Exact match |
 | 2 | [claim text] | [source] | [section] | MAJOR_DISTORTION | Paper says X, source says Y |
 
-### Summary
+#### Summary
 - Total claims checked: [N]
 - VERIFIED: [N]
 - MINOR_DISTORTION: [N]
@@ -58,7 +90,7 @@ Verifies that quantitative and factual claims in the paper are accurately suppor
 
 When the pipeline provides `{article_id}.kg_candidates.json`, Phase E must update or emit a KG Review Update according to `references/kg_handoff_protocol.md`.
 
-Each verified claim row must include either a stable KG `Claim` item ID or a stable Claim Registry row number. Use that identifier to update the matching KG item deterministically; do not rely on claim text matching alone.
+Each verified claim row must include a stable KG `Claim` item ID (`claim_id` / `kg_item_id`) and a stable Claim Registry row number (`claim_registry_row`). Use these identifiers to update matching KG items deterministically; do not rely on claim text matching alone.
 
 Map Claim Verification verdicts to KG `review_status` as follows:
 

@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "cvr-001",
+  "article_id": "article-123",
+  "run_id": "run-001",
+  "mode": "pre-review",
+  "generated_at": "2026-05-19T18:10:00Z",
+  "summary": {
+    "total_claims_checked": 1,
+    "verdict_counts": {
+      "VERIFIED": 1,
+      "MINOR_DISTORTION": 0,
+      "MAJOR_DISTORTION": 0,
+      "UNVERIFIABLE": 0,
+      "UNVERIFIABLE_ACCESS": 0
+    },
+    "overall_verdict": "PASS"
+  },
+  "claims": [
+    {
+      "claim_id": "claim:article-123:c001",
+      "claim_registry_row": 1,
+      "claim_text": "AI-assisted formative assessment improved completion outcomes.",
+      "section": "Discussion",
+      "source_anchor": "sec:discussion:p1",
+      "cited_source_ids": [
+        "S02"
+      ],
+      "verdict": "VERIFIED",
+      "severity": "NONE",
+      "confidence": 0.91,
+      "rationale": "Source and manuscript numbers align.",
+      "concept_links": [
+        {
+          "concept_id": "concept:article-123:qa",
+          "relation_label": "support"
+        }
+      ],
+      "kg_review_update": {
+        "kg_item_id": "claim:article-123:c001",
+        "old_status": "in_review",
+        "new_status": "accepted",
+        "reviewer_notes": "Verified."
+      }
+    }
+  ],
+  "markdown_view": "## Claim Verification Report\n\n- VERIFIED: 1"
+}

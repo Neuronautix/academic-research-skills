@@ -97,14 +97,14 @@ resume_from_passport=<hash> [stage=<n>] [mode=<m>]
 | Stage | Name | Skill / Agent Called | Available Modes | Deliverables |
 |-------|------|---------------------|----------------|-------------|
 | 1 | RESEARCH | `deep-research` | socratic, full, quick | RQ Brief, Methodology, Bibliography, Synthesis |
-| 2 | WRITE | `academic-paper` | plan, full | Paper Draft + initial `{article_id}.kg_candidates.json` |
-| **2.5** | **INTEGRITY** | **`integrity_verification_agent`** | **pre-review** | **Integrity verification report + corrected paper + KG Review Update** |
+| 2 | WRITE | `academic-paper` | plan, full | Paper Draft + initial `{article_id}.kg_candidates.json` (Schema-backed contract) |
+| **2.5** | **INTEGRITY** | **`integrity_verification_agent`** | **pre-review** | **Integrity verification report + structured Claim Verification JSON contract + markdown view + KG Review Update** |
 | 3 | REVIEW | `academic-paper-reviewer` | full (incl. Devil's Advocate) | 5 review reports + Editorial Decision + Revision Roadmap |
-| 4 | REVISE | `academic-paper` | revision | Revised Draft, Response to Reviewers, KG Candidate Delta |
+| 4 | REVISE | `academic-paper` | revision | Revised Draft, Response to Reviewers, KG Candidate Delta (explicit claim→evidence→concept links) |
 | **3'** | **RE-REVIEW** | **`academic-paper-reviewer`** | **re-review** | **Verification review report: revision response checklist + residual issues** |
 | **4'** | **RE-REVISE** | **`academic-paper`** | **revision** | **Second revised draft (if needed) + KG Candidate Delta** |
-| **4.5** | **FINAL INTEGRITY** | **`integrity_verification_agent`** | **final-check** | **Final verification report + KG Review Update (must achieve 100% pass to proceed)** |
-| 5 | FINALIZE | `academic-paper` | format-convert | Final Paper (default MD; DOCX via Pandoc when available, otherwise conversion instructions; ask about LaTeX; confirm correctness; PDF) + final KG handoff JSON |
+| **4.5** | **FINAL INTEGRITY** | **`integrity_verification_agent`** | **final-check** | **Final verification report + structured Claim Verification JSON contract + markdown view + KG Review Update (must achieve 100% pass to proceed)** |
+| 5 | FINALIZE | `academic-paper` | format-convert | Final Paper (default MD; DOCX via Pandoc when available, otherwise conversion instructions; ask about LaTeX; confirm correctness; PDF) + final KG handoff JSON + optional KG-ready export package |
 | **6** | **PROCESS SUMMARY** | **orchestrator** | **auto** | **Paper creation process record MD + LaTeX to PDF (bilingual)** |
 
 **Parallelization opportunity (v3.3)**: Within Stage 2, the `academic-paper` skill's Phase 1 (literature_strategist_agent) and the `visualization_agent` can operate in parallel after Phase 2 (structure_architect_agent) completes the outline. Specifically:
