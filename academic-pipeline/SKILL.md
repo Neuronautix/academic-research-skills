@@ -97,14 +97,14 @@ resume_from_passport=<hash> [stage=<n>] [mode=<m>]
 | Stage | Name | Skill / Agent Called | Available Modes | Deliverables |
 |-------|------|---------------------|----------------|-------------|
 | 1 | RESEARCH | `deep-research` | socratic, full, quick | RQ Brief, Methodology, Bibliography, Synthesis |
-| 2 | WRITE | `academic-paper` | plan, full | Paper Draft |
-| **2.5** | **INTEGRITY** | **`integrity_verification_agent`** | **pre-review** | **Integrity verification report + corrected paper** |
+| 2 | WRITE | `academic-paper` | plan, full | Paper Draft + initial `{article_id}.kg_candidates.json` |
+| **2.5** | **INTEGRITY** | **`integrity_verification_agent`** | **pre-review** | **Integrity verification report + corrected paper + KG Review Update** |
 | 3 | REVIEW | `academic-paper-reviewer` | full (incl. Devil's Advocate) | 5 review reports + Editorial Decision + Revision Roadmap |
-| 4 | REVISE | `academic-paper` | revision | Revised Draft, Response to Reviewers |
+| 4 | REVISE | `academic-paper` | revision | Revised Draft, Response to Reviewers, KG Candidate Delta |
 | **3'** | **RE-REVIEW** | **`academic-paper-reviewer`** | **re-review** | **Verification review report: revision response checklist + residual issues** |
-| **4'** | **RE-REVISE** | **`academic-paper`** | **revision** | **Second revised draft (if needed)** |
-| **4.5** | **FINAL INTEGRITY** | **`integrity_verification_agent`** | **final-check** | **Final verification report (must achieve 100% pass to proceed)** |
-| 5 | FINALIZE | `academic-paper` | format-convert | Final Paper (default MD; DOCX via Pandoc when available, otherwise conversion instructions; ask about LaTeX; confirm correctness; PDF) |
+| **4'** | **RE-REVISE** | **`academic-paper`** | **revision** | **Second revised draft (if needed) + KG Candidate Delta** |
+| **4.5** | **FINAL INTEGRITY** | **`integrity_verification_agent`** | **final-check** | **Final verification report + KG Review Update (must achieve 100% pass to proceed)** |
+| 5 | FINALIZE | `academic-paper` | format-convert | Final Paper (default MD; DOCX via Pandoc when available, otherwise conversion instructions; ask about LaTeX; confirm correctness; PDF) + final KG handoff JSON |
 | **6** | **PROCESS SUMMARY** | **orchestrator** | **auto** | **Paper creation process record MD + LaTeX to PDF (bilingual)** |
 
 **Parallelization opportunity (v3.3)**: Within Stage 2, the `academic-paper` skill's Phase 1 (literature_strategist_agent) and the `visualization_agent` can operate in parallel after Phase 2 (structure_architect_agent) completes the outline. Specifically:
@@ -271,13 +271,13 @@ After user confirmation:
 1. Pass the previous stage's deliverables as input to the next stage
 2. Trigger handoff protocol (defined in each skill's SKILL.md):
    - Stage 1  --> 2: deep-research handoff (RQ Brief + Bibliography + Synthesis)
-   - Stage 2  --> 2.5: Pass complete paper to integrity_verification_agent
+   - Stage 2  --> 2.5: Pass complete paper and initial `{article_id}.kg_candidates.json` to integrity_verification_agent
    - Stage 2.5 --> 3: Pass verified paper to reviewer
    - Stage 3  --> 4: Pass Revision Roadmap to academic-paper revision mode
    - Stage 4  --> 3': Pass revised draft and Response to Reviewers to reviewer
    - Stage 3' --> 4': Pass new Revision Roadmap + R&R Traceability Matrix (Schema 11) to academic-paper revision mode
-   - Stage 4/4' --> 4.5: Pass revision-completed paper to integrity_verification_agent (final verification)
-   - Stage 4.5 --> 5: Pass verified final draft to format-convert mode
+   - Stage 4/4' --> 4.5: Pass revision-completed paper plus synchronized KG Candidate Delta to integrity_verification_agent (final verification)
+   - Stage 4.5 --> 5: Pass verified final draft and final KG handoff JSON to format-convert mode
 3. Begin next stage
 ```
 
@@ -313,6 +313,7 @@ Stage 2.5 (pre-review) and Stage 4.5 (post-revision) verification. 5-phase proto
 
 > See `references/integrity_review_protocol.md` for the 5-phase citation/claim verification procedures.
 > See `references/ai_research_failure_modes.md` for the 7-mode AI research failure checklist and block/override logic.
+> See `references/kg_handoff_protocol.md` for the KG handoff artifact, review-status lifecycle, and revision synchronization rules.
 
 - [v3.4.0] `compliance_agent` runs mode-aware PRISMA-trAIce + RAISE compliance check; tier-based block semantics. See `shared/compliance_checkpoint_protocol.md`.
 
@@ -492,6 +493,7 @@ Explicit prohibitions to prevent common failure modes:
 | `references/plagiarism_detection_protocol.md` | Phase D originality verification protocol + self-plagiarism + AI text characteristics |
 | `references/mode_advisor.md` | Unified cross-skill decision tree: maps user intent to optimal skill + mode |
 | `references/claim_verification_protocol.md` | Phase E claim verification protocol: claim extraction, source tracing, cross-referencing, verdict taxonomy |
+| `references/kg_handoff_protocol.md` | KG handoff protocol: synchronizes `article.md` with `{article_id}.kg_candidates.json` during writing, integrity review, revision, and finalization |
 | `references/ai_research_failure_modes.md` | 7-mode AI research failure checklist (Lu 2026), run at Stage 2.5 + 4.5 with blocking behaviour, reported at Stage 6 |
 | `references/team_collaboration_protocol.md` | Multi-person team coordination: role definitions, handoff protocol, version control, conflict resolution |
 | `references/integrity_review_protocol.md` | Stage 2.5 + 4.5 integrity verification: 5-phase protocol details |

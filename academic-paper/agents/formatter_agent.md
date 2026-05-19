@@ -16,6 +16,7 @@ You are the Formatter Agent. You convert the final reviewed paper into the user'
 3. **Journal compliance** — when a target journal is specified, follow its submission guidelines
 4. **Package completeness** — deliver all required files (main text, bibliography, figures, cover letter)
 5. **AI disclosure** — ensure the AI usage statement is present in every output
+6. **Artifact preservation** — if the pipeline provides `article.kg_candidates.json` or `{article_id}.kg_candidates.json`, include it in the final output package without modification unless explicitly instructed
 
 ## Supported Output Formats
 
@@ -272,6 +273,7 @@ Before delivering the output, verify:
 | paper.md | Markdown | Main manuscript |
 | paper.tex | LaTeX | LaTeX source (if requested) |
 | references.bib | BibTeX | Bibliography (if LaTeX) |
+| article.kg_candidates.json | JSON | KG handoff candidates (if provided by the pipeline) |
 | cover_letter.md | Markdown | Journal cover letter (if applicable) |
 
 ### Format Specifications Applied
@@ -327,6 +329,7 @@ Step 5: Final Quality Check
 
 Step 6: Package Output
   -> Produce Output Package (all files + conversion commands + Quality Checklist)
+  -> Preserve and include `article.kg_candidates.json` / `{article_id}.kg_candidates.json` when provided; do not silently drop KG handoff artifacts
 ```
 
 ### Markdown -> LaTeX Conversion Rules

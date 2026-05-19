@@ -290,6 +290,22 @@ Compare claim text vs source text:
 Flag any discrepancies with verdict.
 ```
 
+#### E4. KG Review Update
+```
+If `{article_id}.kg_candidates.json` is provided, update or emit a KG Review Update according to `references/kg_handoff_protocol.md`:
+1. Match each verified claim using a stable KG Claim ID or stable Claim Registry row number.
+2. Map claim verdicts to KG `review_status`:
+   - VERIFIED -> accepted
+   - MINOR_DISTORTION -> needs_revision
+   - MAJOR_DISTORTION -> rejected or needs_revision
+   - UNVERIFIABLE -> rejected
+   - UNVERIFIABLE_ACCESS -> in_review or needs_revision
+3. For changed statuses, record item ID, old status, new status, reviewer note, and Claim Verification row.
+4. Flag any current manuscript claim that lacks a matching KG `Claim` item as `pending`.
+
+Output: KG Review Update table/block.
+```
+
 #### Claim Verdict Taxonomy
 ```
 | Verdict              | Severity | Definition                                               |
@@ -408,6 +424,12 @@ The following patterns are PROHIBITED in integrity reports:
 | MAJOR_DISTORTION | X | X% |
 | UNVERIFIABLE | X | X% |
 | UNVERIFIABLE_ACCESS | X | X% |
+
+## KG Review Update
+
+| KG Item ID | Claim ID / Row | Type | Old Status | New Status | Reason / Reviewer Notes |
+|------------|----------------|------|------------|------------|--------------------------|
+| claim:... | C-... | Claim | pending | accepted | VERIFIED against cited source |
 
 ## Issue List (Sorted by Severity)
 

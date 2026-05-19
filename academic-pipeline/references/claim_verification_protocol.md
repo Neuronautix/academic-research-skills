@@ -54,6 +54,24 @@ Verifies that quantitative and factual claims in the paper are accurately suppor
 - UNVERIFIABLE: [N] (must be 0 for PASS)
 - UNVERIFIABLE_ACCESS: [N] (noted but does not block PASS)
 
+## KG Synchronization
+
+When the pipeline provides `{article_id}.kg_candidates.json`, Phase E must update or emit a KG Review Update according to `references/kg_handoff_protocol.md`.
+
+Each verified claim row must include either a stable KG `Claim` item ID or a stable Claim Registry row number. Use that identifier to update the matching KG item deterministically; do not rely on claim text matching alone.
+
+Map Claim Verification verdicts to KG `review_status` as follows:
+
+| Verdict | KG `review_status` | Action |
+|---------|--------------------|--------|
+| VERIFIED | accepted | Keep accepted if the claim span is unchanged; update reviewer metadata if reviewed |
+| MINOR_DISTORTION | needs_revision | Record the correction needed in `reviewer_notes` |
+| MAJOR_DISTORTION | rejected or needs_revision | Reject if the claim should be removed; otherwise require manuscript revision |
+| UNVERIFIABLE | rejected | Record unsupported source details in `reviewer_notes` |
+| UNVERIFIABLE_ACCESS | in_review or needs_revision | Keep in review if access is pending; require revision if an accessible source is needed |
+
+The KG Review Update must list changed item IDs, old/new `review_status`, and the Claim Verification row or stable claim ID that justified the update.
+
 ## Pass/Fail Criteria
 - PASS: Zero MAJOR_DISTORTION + Zero UNVERIFIABLE
 - FAIL: Any MAJOR_DISTORTION or UNVERIFIABLE
