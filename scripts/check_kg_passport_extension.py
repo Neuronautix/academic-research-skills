@@ -47,6 +47,8 @@ def semantic_errors(payload: dict) -> list[str]:
     errors: list[str] = []
     assertions = payload.get("kg_assertions", [])
     kg_exports = payload.get("kg_exports") or {}
+    kg_schema = payload.get("kg_schema") or {}
+    hitl_gate = kg_schema.get("hitl_gate") or {}
 
     triple_ids = [a.get("triple_id") for a in assertions if isinstance(a, dict)]
     if len(triple_ids) != len(set(triple_ids)):
@@ -79,6 +81,36 @@ def semantic_errors(payload: dict) -> list[str]:
             errors.append(
                 f"kg_exports.clean_kg_eligible=true but unresolved assertion statuses exist: {sorted(unresolved)}"
             )
+
+    if payload.get("kg_schema"):
+        if hitl_gate.get("user_validated") is not True:
+            errors.append("kg_schema.hitl_gate.user_validated must be true before KG extraction")
+
+        if hitl_gate.get("user_validated") is True:
+            if not hitl_gate.get("validated_by"):
+                errors.append(
+                    "kg_schema.hitl_gate.validated_by is required when user_validated=true"
+                )
+            if not hitl_gate.get("validated_at"):
+                errors.append(
+                    "kg_schema.hitl_gate.validated_at is required when user_validated=true"
+                )
+
+        if hitl_gate.get("force_ontology_alignment") is True:
+            ontology_mappings = kg_schema.get("external_ontology_mappings") or []
+            alignment_targets = kg_schema.get("ontology_alignment_targets") or []
+            if not ontology_mappings:
+                errors.append(
+                    "kg_schema.hitl_gate.force_ontology_alignment=true requires external_ontology_mappings"
+                )
+            if not alignment_targets:
+                errors.append(
+                    "kg_schema.hitl_gate.force_ontology_alignment=true requires ontology_alignment_targets"
+                )
+            if not hitl_gate.get("alignment_rationale"):
+                errors.append(
+                    "kg_schema.hitl_gate.force_ontology_alignment=true requires alignment_rationale"
+                )
 
     return errors
 

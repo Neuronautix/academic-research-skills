@@ -61,7 +61,8 @@
         "classes",
         "predicates",
         "controlled_vocabularies",
-        "external_ontology_mappings"
+        "external_ontology_mappings",
+        "hitl_gate"
       ],
       "properties": {
         "version": {
@@ -101,6 +102,51 @@
             "minLength": 1
           },
           "uniqueItems": true
+        },
+        "ontology_alignment_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "MBO",
+              "HCMO",
+              "PCDO",
+              "PROV-O",
+              "SKOS",
+              "RO-Crate",
+              "DataCite",
+              "DCAT"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "hitl_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "user_validated",
+            "force_ontology_alignment"
+          ],
+          "properties": {
+            "user_validated": {
+              "type": "boolean"
+            },
+            "validated_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "validated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "force_ontology_alignment": {
+              "type": "boolean"
+            },
+            "alignment_rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         },
         "review_status": {
           "type": "string",

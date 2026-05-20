@@ -82,6 +82,14 @@ Populate ontology-aware optional fields whenever the information is available fr
 - `related_concept_ids` should connect claims and evidence to the concepts they instantiate, define, measure, or compare.
 - `iri` should be stable across runs once assigned. Prefer resolvable `https` identifiers. Do not mint a new IRI for a renamed concept if the underlying concept is unchanged.
 
+## KG-2 Ontology/Schema Design Gate
+
+Before KG extraction, Stage-2 should carry a lightweight schema proposal in passport `kg_schema`:
+
+- `classes[]` and `predicates[]` should be explicitly enumerated for the domain run (for example classes such as `Paper`, `Study`, `Species`, `Assay`, `BehavioralEndpoint`, `Finding`, `Dataset`; and predicates such as `uses_system`, `measures_endpoint`, `supports_claim`, `contradicts_claim`).
+- `hitl_gate.user_validated` must be `true` with reviewer identity/timestamp (`validated_by`, `validated_at`) before extraction proceeds.
+- If ontology alignment is mandatory for the run, set `hitl_gate.force_ontology_alignment=true` and provide both `external_ontology_mappings[]` and `ontology_alignment_targets[]` (e.g., `MBO`, `HCMO`, `PCDO`, `PROV-O`, `SKOS`, `RO-Crate`, `DataCite`, `DCAT`).
+
 ## Semantic Quality Rules
 
 Semantic validation is stricter than schema validation. Before finalization or publishing, the handoff should satisfy these rules:

@@ -49,6 +49,26 @@ class TestCheckKgPassportExtension(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("clean_kg_eligible=true", result.stdout + result.stderr)
 
+    def test_kg_schema_requires_user_validation(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_schema"]["hitl_gate"]["user_validated"] = False
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("user_validated must be true", result.stdout + result.stderr)
+
+    def test_force_alignment_requires_targets(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_schema"]["ontology_alignment_targets"] = []
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("ontology_alignment_targets", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
