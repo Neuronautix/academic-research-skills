@@ -57,6 +57,63 @@ class TestCheckKgHandoff(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("orphaned", result.stdout + result.stderr)
 
+    def test_invalid_status_transition_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+            payload["items"][2]["status_history"] = [
+                {
+                    "status": "candidate",
+                    "decision_by": "reviewer-a",
+                    "decision_at": "2026-05-19T18:00:00Z",
+                    "rationale": "Initial extraction"
+                },
+                {
+                    "status": "accepted",
+                    "decision_by": "reviewer-b",
+                    "decision_at": "2026-05-19T18:10:00Z",
+                    "rationale": "Skipped required review state"
+                }
+            ]
+            payload["items"][2]["review_status"] = "accepted"
+            p = Path(tmp) / "bad.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("invalid status transition", result.stdout + result.stderr)
+
+    def test_entity_merge_conflict_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+            payload["items"].append(
+                {
+                    "id": "concept:article-123:qa-dup",
+                    "type": "Concept",
+                    "source_document": "article.md",
+                    "source_section": "Introduction",
+                    "source_anchor": "sec:intro:p4",
+                    "supporting_quote_or_span": "quality assurance",
+                    "source_citation_id": "S03",
+                    "source_citation": "Doe 2024",
+                    "confidence": 0.82,
+                    "confidence_rationale": "Alias candidate.",
+                    "extraction_method": "ars_hitl",
+                    "review_status": "human_reviewed",
+                    "review_decision": {
+                        "decision_by": "integrity_verification_agent",
+                        "decision_at": "2026-05-19T18:04:00Z",
+                        "rationale": "Manually reviewed."
+                    },
+                    "canonical_label": "Quality Assurance",
+                    "aliases": ["QA"],
+                    "iri": "https://example.org/qa-alt"
+                }
+            )
+            p = Path(tmp) / "bad.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("ENTITY-MERGE-CONFLICT", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

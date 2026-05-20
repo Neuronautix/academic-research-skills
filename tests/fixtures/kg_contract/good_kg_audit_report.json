@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "audit_id": "kg-audit-001",
+  "article_id": "article-123",
+  "run_id": "run-001",
+  "generated_at": "2026-05-19T18:20:00Z",
+  "summary": {
+    "total_findings": 1,
+    "unresolved_high_warn_count": 1,
+    "blocking": true
+  },
+  "findings": [
+    {
+      "finding_id": "kgf-001",
+      "code": "HIGH-WARN-KG-UNSUPPORTED-TRIPLE",
+      "severity": "HIGH-WARN",
+      "status": "open",
+      "triple_id": "kg_t_000124",
+      "source_anchor": "Methods, paragraph 3",
+      "rationale": "Cited span does not support the predicate strength."
+    }
+  ]
+}

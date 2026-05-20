@@ -102,6 +102,8 @@ Map Claim Verification verdicts to KG `review_status` as follows:
 | UNVERIFIABLE | rejected | Record unsupported source details in `reviewer_notes` |
 | UNVERIFIABLE_ACCESS | in_review or needs_revision | Keep in review if access is pending; require revision if an accessible source is needed |
 
+When KG Stage-3 lifecycle is enabled, claim rows may transition through `candidate` / `evidence_supported` / `human_reviewed` before terminal `accepted` or `rejected`.
+
 The KG Review Update must list changed item IDs, old/new `review_status`, and the Claim Verification row or stable claim ID that justified the update.
 
 ## Pass/Fail Criteria

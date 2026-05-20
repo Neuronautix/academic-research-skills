@@ -1,0 +1,63 @@
+schema_version: 9
+project_id: kg-extension-demo
+verification_status: VERIFIED
+
+kg_scope:
+  domain: home cage monitoring for rodent behavioral phenotyping
+  purpose:
+    - support literature review
+    - enable agentic retrieval
+  competency_questions:
+    - Which HCM systems measure locomotor activity?
+  out_of_scope:
+    - clinical human actigraphy
+  approved_by: user
+  approved_at: "2026-05-19T18:00:00Z"
+
+kg_schema:
+  version: "1.0.0"
+  classes:
+    - Paper
+    - HomeCageSystem
+    - BehavioralEndpoint
+  predicates:
+    - measures_endpoint
+    - supports_claim
+  controlled_vocabularies:
+    - HCMO
+  external_ontology_mappings:
+    - https://w3id.org/ro/crate/1.1
+  review_status: approved
+
+kg_assertions:
+  - triple_id: kg_t_000124
+    subject: Tecniplast DVC
+    predicate: measures_endpoint
+    object: locomotor activity
+    source_anchor: Methods paragraph 3
+    evidence_quote_hash: sha256:abc123
+    claim_type: methodological
+    modality: reports
+    confidence: 0.92
+    review_status: accepted
+    human_decision: accept
+
+kg_review_history:
+  - reviewer_role: evidence_reviewer
+    decision: accepted
+    rationale: Evidence anchor supports subject predicate object.
+    affected_triples:
+      - kg_t_000124
+    reviewed_at: "2026-05-19T18:10:00Z"
+
+kg_exports:
+  jsonld: exports/kg.jsonld
+  ttl: exports/kg.ttl
+  graphml: exports/kg.graphml
+  kg_nodes_csv: exports/kg_nodes.csv
+  kg_edges_csv: exports/kg_edges.csv
+  evidence_index: exports/kg_evidence.jsonl
+  kg_review_report: exports/kg_review_report.md
+  kg_schema: exports/kg_schema.yaml
+  kg_shacl_shapes: exports/kg_shacl_shapes.ttl
+  clean_kg_eligible: true

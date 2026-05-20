@@ -231,7 +231,11 @@
                 "in_review",
                 "accepted",
                 "rejected",
-                "needs_revision"
+                "needs_revision",
+                "candidate",
+                "evidence_supported",
+                "human_reviewed",
+                "superseded"
               ]
             },
             "new_status": {
@@ -241,7 +245,11 @@
                 "in_review",
                 "accepted",
                 "rejected",
-                "needs_revision"
+                "needs_revision",
+                "candidate",
+                "evidence_supported",
+                "human_reviewed",
+                "superseded"
               ]
             },
             "reviewer_notes": {

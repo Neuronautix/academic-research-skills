@@ -124,6 +124,10 @@ For claims, prefer a persistent claim registry ID. If none exists, use the Claim
 | `accepted` | Candidate is verified and suitable for KG ingestion |
 | `rejected` | Candidate should not be ingested; keep an audit note |
 | `needs_revision` | Candidate may be valid but the manuscript span, citation, or support must be corrected before acceptance |
+| `candidate` | Newly extracted KG candidate triple/item pending evidence alignment |
+| `evidence_supported` | Source anchor supports extraction but human review is still pending |
+| `human_reviewed` | Passed explicit human review; eligible for clean KG when no blockers remain |
+| `superseded` | Replaced by a newer ID or merged assertion; retained for audit history |
 
 Normal lifecycle:
 
@@ -132,6 +136,9 @@ pending -> in_review -> accepted
 pending -> in_review -> needs_revision -> in_review -> accepted
 pending -> in_review -> rejected
 accepted -> needs_revision | rejected
+candidate -> evidence_supported -> human_reviewed -> accepted
+candidate -> rejected | superseded
+human_reviewed -> rejected | superseded | needs_revision
 ```
 
 ## Claim Verdict Mapping
@@ -172,6 +179,19 @@ Do not silently delete obsolete items during the pipeline; preserve them as `rej
 - Stage 4 / 4' REVISE: emit a KG Candidate Delta for claims, concepts, and evidence added, changed, or removed.
 - Stage 4.5 FINAL INTEGRITY: re-check KG synchronization and update review statuses from final claim verification.
 - Stage 5 FINALIZE: include the final KG handoff JSON with the output package when present.
+
+## KG Evidence Audit Blocking Classes (HIGH-WARN-KG)
+
+KG clean export must block while unresolved findings exist for:
+
+- `HIGH-WARN-KG-UNSUPPORTED-TRIPLE`
+- `HIGH-WARN-KG-ANCHORLESS`
+- `HIGH-WARN-KG-FABRICATED-SOURCE`
+- `HIGH-WARN-KG-RELATION-MISCLASSIFIED`
+- `HIGH-WARN-KG-ENTITY-MERGE-CONFLICT`
+- `HIGH-WARN-KG-CONTRADICTION-UNRESOLVED`
+
+Use `shared/contracts/kg/kg_audit_report.schema.json` + `scripts/check_kg_audit_report.py` to carry and validate this gate.
 
 ## Finalization Checklist
 
