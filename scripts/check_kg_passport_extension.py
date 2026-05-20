@@ -48,7 +48,9 @@ def semantic_errors(payload: dict) -> list[str]:
     assertions = payload.get("kg_assertions", [])
     kg_exports = payload.get("kg_exports") or {}
     kg_schema = payload.get("kg_schema") or {}
+    kg_scope = payload.get("kg_scope")
     hitl_gate = kg_schema.get("hitl_gate") or {}
+    schema_predicates = set(kg_schema.get("predicates") or [])
 
     triple_ids = [a.get("triple_id") for a in assertions if isinstance(a, dict)]
     if len(triple_ids) != len(set(triple_ids)):
@@ -58,6 +60,7 @@ def semantic_errors(payload: dict) -> list[str]:
         status = assertion.get("review_status")
         decision = assertion.get("human_decision")
         triple_id = assertion.get("triple_id")
+        predicate = assertion.get("predicate")
         if status in {"human_reviewed", "accepted"} and not decision:
             errors.append(f"assertion {triple_id} requires human_decision for status={status}")
         if status == "accepted" and decision and decision != "accept":
@@ -65,6 +68,10 @@ def semantic_errors(payload: dict) -> list[str]:
         if status in {"candidate", "evidence_supported"} and decision == "accept":
             errors.append(
                 f"assertion {triple_id} cannot be marked human_decision=accept before human_reviewed/accepted"
+            )
+        if schema_predicates and predicate not in schema_predicates:
+            errors.append(
+                f"assertion {triple_id} predicate '{predicate}' is not declared in kg_schema.predicates"
             )
 
     if kg_exports.get("clean_kg_eligible") is True:
@@ -111,6 +118,12 @@ def semantic_errors(payload: dict) -> list[str]:
                 errors.append(
                     "kg_schema.hitl_gate.force_ontology_alignment=true requires alignment_rationale"
                 )
+
+    if assertions:
+        if not kg_scope:
+            errors.append("kg_assertions requires kg_scope (KG-1 gate) before extraction")
+        if not kg_schema:
+            errors.append("kg_assertions requires kg_schema (KG-2 gate) before extraction")
 
     return errors
 

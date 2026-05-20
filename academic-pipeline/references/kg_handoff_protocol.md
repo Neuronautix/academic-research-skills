@@ -90,6 +90,14 @@ Before KG extraction, Stage-2 should carry a lightweight schema proposal in pass
 - `hitl_gate.user_validated` must be `true` with reviewer identity/timestamp (`validated_by`, `validated_at`) before extraction proceeds.
 - If ontology alignment is mandatory for the run, set `hitl_gate.force_ontology_alignment=true` and provide both `external_ontology_mappings[]` and `ontology_alignment_targets[]` (e.g., `MBO`, `HCMO`, `PCDO`, `PROV-O`, `SKOS`, `RO-Crate`, `DataCite`, `DCAT`).
 
+## KG-3 Assertion Extraction Gate
+
+During extraction, Stage-3 assertions in passport `kg_assertions` should remain aligned with the approved KG-2 schema:
+
+- `kg_assertions` should only be emitted after KG-1 scope (`kg_scope`) and KG-2 schema (`kg_schema`) are present.
+- Every assertion `predicate` should be declared in `kg_schema.predicates` for the run.
+- Keep triple IDs stable (`triple_id`) and continue lifecycle progression through `candidate` / `evidence_supported` / `human_reviewed` before terminal outcomes.
+
 ## Semantic Quality Rules
 
 Semantic validation is stricter than schema validation. Before finalization or publishing, the handoff should satisfy these rules:

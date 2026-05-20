@@ -69,6 +69,26 @@ class TestCheckKgPassportExtension(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("ontology_alignment_targets", result.stdout + result.stderr)
 
+    def test_assertions_require_kg_schema(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            del payload["kg_schema"]
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("kg_assertions requires kg_schema", result.stdout + result.stderr)
+
+    def test_assertion_predicate_must_be_declared_in_schema(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_assertions"][0]["predicate"] = "unknown_predicate"
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("not declared in kg_schema.predicates", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
