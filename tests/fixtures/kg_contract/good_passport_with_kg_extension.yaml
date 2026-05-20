@@ -37,7 +37,7 @@ kg_assertions:
     source_anchor: Methods paragraph 3
     evidence_quote_hash: sha256:abc123
     claim_type: methodological
-    modality: reports
+    modality: reported
     confidence: 0.92
     review_status: accepted
     human_decision: accept

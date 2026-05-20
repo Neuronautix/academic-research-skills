@@ -110,6 +110,17 @@
         "methodological"
       ]
     },
+    "modality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "observed",
+        "reported",
+        "inferred",
+        "hypothesized",
+        "speculative"
+      ]
+    },
     "lifecycle_event": {
       "type": "object",
       "additionalProperties": false,
@@ -238,8 +249,7 @@
           "$ref": "#/$defs/claim_type"
         },
         "modality": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/modality"
         },
         "qualifiers": {
           "type": "object",
@@ -315,7 +325,9 @@
           "then": {
             "required": [
               "related_evidence_ids",
-              "related_concept_ids"
+              "related_concept_ids",
+              "claim_type",
+              "modality"
             ]
           }
         }

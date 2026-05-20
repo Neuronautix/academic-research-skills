@@ -114,6 +114,101 @@ class TestCheckKgHandoff(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("ENTITY-MERGE-CONFLICT", result.stdout + result.stderr)
 
+    def test_modality_claim_type_mismatch_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+            payload["items"][2]["claim_type"] = "hypothesis"
+            payload["items"][2]["modality"] = "measured"
+            p = Path(tmp) / "bad.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("MODALITY-MISMATCH", result.stdout + result.stderr)
+
+    def test_contradiction_cluster_without_user_arbitration_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+            payload["items"].append(
+                {
+                    "id": "evidence:article-123:e002",
+                    "type": "Evidence",
+                    "source_document": "article.md",
+                    "source_section": "Results",
+                    "source_anchor": "sec:results:p4",
+                    "supporting_quote_or_span": "No measurable effect was detected.",
+                    "source_citation_id": "S03",
+                    "source_citation": "Smith 2026",
+                    "confidence": 0.85,
+                    "confidence_rationale": "Direct contradiction candidate.",
+                    "extraction_method": "ars_hitl",
+                    "review_status": "human_reviewed",
+                    "review_decision": {
+                        "decision_by": "integrity_verification_agent",
+                        "decision_at": "2026-05-19T18:03:00Z",
+                        "rationale": "Evidence reviewed."
+                    },
+                    "reviewer_notes": "Contradictory evidence retained for adjudication context."
+                }
+            )
+            payload["links"].append(
+                {
+                    "id": "link-003",
+                    "from_id": "claim:article-123:c001",
+                    "to_id": "evidence:article-123:e002",
+                    "relation_type": "claim_contradicted_by_evidence",
+                    "polarity": "contradiction",
+                    "confidence": 0.8,
+                    "rationale": "Contradictory finding from alternate source."
+                }
+            )
+            p = Path(tmp) / "bad.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("CONTRADICTION-UNRESOLVED", result.stdout + result.stderr)
+
+    def test_contradiction_cluster_with_user_arbitration_passes(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = json.loads(FIXTURE.read_text(encoding="utf-8"))
+            payload["items"][2]["reviewer_notes"] = "Conflict reviewed and user_arbitrated: keep accepted."
+            payload["items"].append(
+                {
+                    "id": "evidence:article-123:e002",
+                    "type": "Evidence",
+                    "source_document": "article.md",
+                    "source_section": "Results",
+                    "source_anchor": "sec:results:p4",
+                    "supporting_quote_or_span": "No measurable effect was detected.",
+                    "source_citation_id": "S03",
+                    "source_citation": "Smith 2026",
+                    "confidence": 0.85,
+                    "confidence_rationale": "Direct contradiction candidate.",
+                    "extraction_method": "ars_hitl",
+                    "review_status": "human_reviewed",
+                    "review_decision": {
+                        "decision_by": "integrity_verification_agent",
+                        "decision_at": "2026-05-19T18:03:00Z",
+                        "rationale": "Evidence reviewed."
+                    },
+                    "reviewer_notes": "Contradictory evidence retained for adjudication context."
+                }
+            )
+            payload["links"].append(
+                {
+                    "id": "link-003",
+                    "from_id": "claim:article-123:c001",
+                    "to_id": "evidence:article-123:e002",
+                    "relation_type": "claim_contradicted_by_evidence",
+                    "polarity": "contradiction",
+                    "confidence": 0.8,
+                    "rationale": "Contradictory finding from alternate source."
+                }
+            )
+            p = Path(tmp) / "good.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

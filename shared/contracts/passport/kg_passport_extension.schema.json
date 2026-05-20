@@ -175,7 +175,14 @@
           },
           "modality": {
             "type": "string",
-            "minLength": 1
+            "enum": [
+              "measured",
+              "observed",
+              "reported",
+              "inferred",
+              "hypothesized",
+              "speculative"
+            ]
           },
           "confidence": {
             "type": "number",

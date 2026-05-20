@@ -139,6 +139,24 @@ accepted -> needs_revision | rejected
 candidate -> evidence_supported -> human_reviewed -> accepted
 candidate -> rejected | superseded
 human_reviewed -> rejected | superseded | needs_revision
+
+Second-pass tightening:
+
+- `pending -> candidate` is the default extraction path for KG-mode lifecycle-tracked items.
+- For lifecycle-tracked claim triples, direct `candidate -> accepted` transitions are invalid.
+- Keep status history append-only; latest event must equal current `review_status`.
+
+## Claim Type + Modality Compatibility (Second-pass)
+
+When `type=Claim`, both `claim_type` and `modality` are required.
+
+- `finding`: `measured | observed | reported | inferred`
+- `hypothesis`: `hypothesized | speculative | inferred`
+- `limitation`: `reported | inferred`
+- `method` / `methodological`: `measured | reported | observed` (`methodological` may include `inferred`)
+- `background`: `reported | inferred`
+
+Invalid pairings should be treated as `HIGH-WARN-KG-MODALITY-MISMATCH`.
 ```
 
 ## Claim Verdict Mapping
@@ -190,6 +208,8 @@ KG clean export must block while unresolved findings exist for:
 - `HIGH-WARN-KG-RELATION-MISCLASSIFIED`
 - `HIGH-WARN-KG-ENTITY-MERGE-CONFLICT`
 - `HIGH-WARN-KG-CONTRADICTION-UNRESOLVED`
+
+For contradiction clusters (same claim has both support and contradiction links), explicit user arbitration is required. In handoff semantics this is represented with `reviewer_notes` containing `user_arbitrated` on the affected claim (or equivalent structured arbitration metadata in downstream review artifacts).
 
 Use `shared/contracts/kg/kg_audit_report.schema.json` + `scripts/check_kg_audit_report.py` to carry and validate this gate.
 
