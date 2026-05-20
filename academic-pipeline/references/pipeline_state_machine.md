@@ -140,30 +140,30 @@ This document defines all legal states, transition conditions, transition action
 |------|----|-------------|--------|
 | INIT | Stage 1 | User confirms starting from Stage 1 | Detect mode preference, launch deep-research |
 | INIT | Stage 2 | User has research materials, confirms skipping Stage 1 | Detect materials, launch academic-paper |
-| INIT | Stage 2.5 | User has complete paper | Launch integrity_verification_agent |
-| INIT | Stage 3 | User has verified paper + integrity report | Confirm paper language/domain, launch reviewer |
+| INIT | Stage 2.5 | User has complete paper and, when KG is active, complete schema-valid `{article_id}.kg_candidates.json` | Launch integrity_verification_agent |
+| INIT | Stage 3 | User has verified paper + integrity report + Claim Verification JSON; when KG is active, updated complete `{article_id}.kg_candidates.json` | Confirm paper language/domain, launch reviewer |
 | INIT | Stage 4 | User has review comments | Confirm paper + review comments, launch revision |
-| INIT | Stage 5 | User has final draft for format conversion | Confirm format requirements, launch format-convert |
+| INIT | Stage 5 | User has final draft for format conversion plus final integrity report; when KG exists, final complete KG handoff + Claim Verification JSON are available | Confirm format requirements, launch format-convert with KG validation/package builder enabled when applicable |
 | Stage 1 | **checkpoint** | Stage 1 completed | Wait for user confirmation |
 | checkpoint | Stage 2 | User confirms | handoff RQ Brief + Bibliography + Synthesis |
-| Stage 2 | **checkpoint** | Stage 2 completed, Paper Draft produced | Wait for user confirmation |
-| checkpoint | Stage 2.5 | User confirms | Pass Paper Draft to integrity agent |
-| Stage 2.5 | **checkpoint** | PASS | Wait for user confirmation |
+| Stage 2 | **checkpoint** | Stage 2 completed, Paper Draft + complete schema-valid `{article_id}.kg_candidates.json` produced | Wait for user confirmation |
+| checkpoint | Stage 2.5 | User confirms | Pass Paper Draft + canonical KG handoff to integrity agent |
+| Stage 2.5 | **checkpoint** | PASS and Claim Verification JSON + KG Review Update + updated complete KG handoff emitted | Wait for user confirmation |
 | Stage 2.5 | Stage 2.5 (retry) | FAIL | Fix issues, re-verify (max 3 rounds) |
-| checkpoint | Stage 3 | User confirms | Pass verified paper to reviewer |
+| checkpoint | Stage 3 | User confirms | Pass verified paper + integrity report + claim verification materials + updated KG handoff to reviewer |
 | Stage 3 | **checkpoint** | Decision produced | Wait for user confirmation |
 | checkpoint | Stage 4 | Decision = Minor/Major, user confirms | Pass Revision Roadmap |
 | checkpoint | Stage 4.5 | Decision = Accept, user confirms | Skip revision, go directly to final verification |
 | Stage 4 | **checkpoint** | Stage 4 completed | Wait for user confirmation |
-| checkpoint | Stage 3' | User confirms | Pass Revised Draft + Response to Reviewers |
+| checkpoint | Stage 3' | User confirms | Merge Stage 4 KG Candidate Delta into canonical KG handoff, then pass Revised Draft + Response to Reviewers + synchronized KG handoff |
 | Stage 3' | **checkpoint** | Decision produced | Wait for user confirmation |
-| checkpoint | Stage 4.5 | Decision = Accept/Minor, user confirms | Pass final draft to final verification |
+| checkpoint | Stage 4.5 | Decision = Accept/Minor, user confirms | Pass final draft + current canonical KG handoff to final verification |
 | checkpoint | Stage 4' | Decision = Major, user confirms | Pass new Revision Roadmap |
 | Stage 4' | **checkpoint** | Stage 4' completed | Wait for user confirmation |
-| checkpoint | Stage 4.5 | User confirms | Pass revised draft to final verification |
-| Stage 4.5 | **checkpoint** | PASS (zero issues) | Wait for user confirmation |
+| checkpoint | Stage 4.5 | User confirms | Merge Stage 4' KG Candidate Delta into canonical KG handoff, then pass revised draft + synchronized KG handoff to final verification |
+| Stage 4.5 | **checkpoint** | PASS (zero issues) and Claim Verification JSON + KG Review Update + final complete KG handoff emitted | Wait for user confirmation |
 | Stage 4.5 | Stage 4.5 (retry) | FAIL | Fix issues, re-verify (max 3 rounds) |
-| checkpoint | Stage 5 | User confirms | Pass final accepted draft |
+| checkpoint | Stage 5 | User confirms | Pass final accepted draft + final integrity report; when KG exists, pass final KG handoff and claim verification JSON to validation/package builder |
 
 ### Special Flow Transitions
 
@@ -184,6 +184,8 @@ This document defines all legal states, transition conditions, transition action
 | Stage 2 | Stage 3 | **Cannot skip Stage 2.5 (integrity check is mandatory)** |
 | Stage 4 | Stage 5 | Cannot skip RE-REVIEW (revision must be re-reviewed) |
 | Stage 3' | Stage 5 | **Cannot skip Stage 4.5 (final integrity check is mandatory)** |
+| Stage 4/4' | Stage 4.5 | Cannot enter final integrity while any KG Candidate Delta remains unmerged into the canonical handoff |
+| Stage 4.5 | Stage 5 | Cannot finalize KG-active papers without final Claim Verification JSON and final complete schema-valid KG handoff |
 | Stage 4' | Stage 3' | Cannot return to RE-REVIEW (max 1 round of RE-REVISE) |
 | Stage 5 | Stage 3 | Cannot roll back (no review after FINALIZE) |
 | completed | in_progress | Completed stages cannot restart |
@@ -199,16 +201,25 @@ This document defines all legal states, transition conditions, transition action
 | Bibliography | Stage 1 | Stage 2 (Phase 1) | Recommended |
 | Synthesis Report | Stage 1 | Stage 2 (Phase 3) | Recommended |
 | Paper Draft | Stage 2 | Stage 2.5 (input) | **Required** |
+| **Initial KG handoff (`{article_id}.kg_candidates.json`)** | **Stage 2** | **Stage 2.5 (input)** | **Required; complete and schema-valid** |
 | **Integrity Report (Pre)** | **Stage 2.5** | **Stage 3 (prerequisite)** | **Required** |
+| **Claim Verification JSON (Pre) + markdown view** | **Stage 2.5** | **Stage 3 (prerequisite)** | **Required** |
+| **KG Review Update (Pre)** | **Stage 2.5** | **Canonical KG handoff before Stage 3** | **Required when KG exists** |
+| **Updated KG handoff (Pre)** | **Stage 2.5** | **Stage 3 (prerequisite)** | **Required when KG exists; complete handoff re-emission** |
 | **Verified Paper Draft** | **Stage 2.5** | **Stage 3 (Phase 0)** | **Required** |
 | Review Reports (x5) | Stage 3 | Stage 4 (input) | Required |
 | Editorial Decision | Stage 3 | Stage 4 (input) | Required |
 | Revision Roadmap | Stage 3 | Stage 4 (input) | Required |
 | Revised Draft | Stage 4 | Stage 3' (Phase 0) | Required |
 | Response to Reviewers | Stage 4 | Stage 3' (input) | Recommended |
+| KG Candidate Delta | Stage 4 / 4' | Canonical KG handoff before Stage 3' or 4.5 | Required when KG exists |
+| Merged canonical KG handoff | Stage 4 / 4' merge step | Stage 3' / Stage 4.5 | Required when KG exists; deltas cannot remain standalone |
 | **Re-Review Report** | **Stage 3'** | **Stage 4' (input)** | **Required (if Major)** |
 | **Re-Revised Draft** | **Stage 4'** | **Stage 4.5 (input)** | **Required (if executed)** |
 | **Integrity Report (Final)** | **Stage 4.5** | **Stage 5 (prerequisite)** | **Required** |
+| **Claim Verification JSON (Final) + markdown view** | **Stage 4.5** | **Stage 5 (prerequisite)** | **Required** |
+| **KG Review Update (Final)** | **Stage 4.5** | **Final KG handoff before Stage 5** | **Required when KG exists** |
+| **Final KG handoff (`{article_id}.kg_candidates.json`)** | **Stage 4.5** | **Stage 5 validation/package builder** | **Required when KG exists; complete and schema-valid** |
 | Final Paper | Stage 5 | END (delivery) | Required |
 
 ---
@@ -230,6 +241,7 @@ If required materials are found missing during transition:
 1. state_tracker reports the material gap
 2. orchestrator suggests returning to the stage that produces that material
 3. User can choose: backfill / skip (at own risk, but cannot skip integrity checks)
+4. KG-active transitions cannot proceed with a partial KG handoff, unmerged KG delta, or missing claim verification JSON; route back to the producing stage to regenerate or merge the artifact
 
 ### Integrity Check FAIL Loop
 

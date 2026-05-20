@@ -303,8 +303,10 @@ If `{article_id}.kg_candidates.json` is provided, update or emit a KG Review Upd
 3. For changed statuses, record item ID, old status, new status, reviewer note, and Claim Verification row.
 4. Flag any current manuscript claim that lacks a matching KG `Claim` item as `pending`.
 
-Output: KG Review Update table/block.
+Output: KG Review Update table/block plus an updated complete `{article_id}.kg_candidates.json`.
 ```
+
+The KG handoff is a first-class Stage 2.5/4.5 material. Do not emit only a delta or review table: apply the KG Review Update to the provided canonical handoff and re-emit the complete schema-valid JSON. If the provided handoff is missing, partial, schema-invalid, or cannot be synchronized to the manuscript and claim registry, return HANDOFF_INCOMPLETE.
 
 #### E5. Structured Claim Verification Contract (JSON + Markdown)
 ```
@@ -315,6 +317,7 @@ Claim Verification output must be emitted in two synchronized forms:
    - Include stable claim identifiers (`claim_id`, `claim_registry_row`)
    - Include deterministic KG update payload (`kg_review_update.kg_item_id`, old/new status)
    - Include confidence and rationale for every claim row
+   - When KG exists, reference the updated complete `{article_id}.kg_candidates.json`
 
 2) Human-readable markdown view (required):
    - Derived from the JSON rows (table + summary)
@@ -347,20 +350,24 @@ Fail fast: if required JSON fields are missing, stop and return HANDOFF_INCOMPLE
 ### Mode 1: Initial Verification (Stage 2.5 — Pre-Review Integrity)
 
 **Goal**: Catch all integrity issues before submission for review
+- Input must include the complete paper draft and complete schema-valid `{article_id}.kg_candidates.json` from Stage 2. Missing, partial, or schema-invalid KG handoff blocks as HANDOFF_INCOMPLETE.
 - Execute Phase A (all) + Phase B (30%+ spot-check) + Phase C (all) + **Phase D (30%+ spot-check)** + **Phase E (30% claim spot-check)**
 - Phase D executes D1 (paragraph-level originality check, sampling rate >= 30%) + D2 (self-plagiarism check, if author name provided)
 - Phase E executes E1 (claim extraction) + E2 (source tracing) + E3 (cross-referencing) on a 30% random sample of claims (minimum 10 claims)
+- Emit the structured Claim Verification JSON contract, markdown view, KG Review Update, and an updated complete KG handoff with review statuses applied.
 - Issues found -> produce correction list -> fix -> re-verify corrected items
 - **Must PASS to proceed to Stage 3 (REVIEW)**
 
 ### Mode 2: Final Verification (Stage 4.5 — Post-Revision Final Check)
 
 **Goal**: Confirm the revised paper is 100% correct
+- Input must include the revised or re-revised paper plus the canonical KG handoff with all Stage 4/4' KG Candidate Deltas already merged. Unmerged deltas block before final verification.
 - Execute Phase A (all, FRESH) + Phase B (100% full check) + Phase C (all) + **Phase D (50%+ spot-check)** + **Phase E (100% claim verification)**
 - **⚠️ Phase A must be a FRESH full verification of ALL references, not just re-checking Stage 2.5 fixes.** The Stage 2.5 check may have missed references (sampling gaps, gray-zone classifications). Stage 4.5 is the last line of defense — it must independently verify every reference as if Stage 2.5 never happened.
 - Phase D sampling rate increased to >= 50%, and all paragraphs newly added or substantially modified during revision are checked 100%
 - Phase E verifies 100% of all quantitative/factual claims against their cited sources; zero MAJOR_DISTORTION and zero UNVERIFIABLE required
 - Special focus: Citations, data, and claims added or modified during the revision process
+- Re-check KG synchronization against the final manuscript, emit final Claim Verification JSON + markdown view, final KG Review Update, and a final complete schema-valid KG handoff.
 - ADDITIONALLY: Compare with Stage 2.5 verification results to confirm all previous issues are resolved (this is a supplementary check, not a replacement for fresh verification)
 - **Must PASS with zero issues to proceed to Stage 5 (FINALIZE)**
 
@@ -495,6 +502,10 @@ The following patterns are PROHIBITED in integrity reports:
 | KG Item ID | Claim ID / Row | Type | Old Status | New Status | Reason / Reviewer Notes |
 |------------|----------------|------|------------|------------|--------------------------|
 | claim:... | C-... | Claim | pending | accepted | VERIFIED against cited source |
+
+## Updated KG Handoff JSON
+
+Emit or attach the complete updated `{article_id}.kg_candidates.json` after applying the KG Review Update. It must validate against `shared/contracts/kg/ars_handoff.schema.json` and satisfy the semantic checks in `references/kg_handoff_protocol.md`.
 
 ## Issue List (Sorted by Severity)
 

@@ -433,8 +433,10 @@ The cost is multiplicative: a 10-stage pipeline with cross-model enabled produce
 1. Identify which schema(s) apply to the transition's output artifacts
 2. Validate all required fields are present and correctly typed
 3. Verify Material Passport (Schema 9) is attached with current version label
-4. If validation fails -> return HANDOFF_INCOMPLETE with missing fields list
-5. If validation passes -> proceed with transition
+4. If `{article_id}.kg_candidates.json` is present or required, validate it against `shared/contracts/kg/ars_handoff.schema.json` and run KG semantic checks from `references/kg_handoff_protocol.md`
+5. If Claim Verification JSON is present or required, validate it against `shared/contracts/pipeline/claim_verification_report.schema.json`
+6. If validation fails -> return HANDOFF_INCOMPLETE with missing fields list
+7. If validation passes -> proceed with transition
 ```
 
 **Handoff material transfer rules:**
@@ -442,15 +444,17 @@ The cost is multiplicative: a 10-stage pipeline with cross-model enabled produce
 | Transition | Transferred Materials | Schema Reference | Transfer Method |
 |-----------|----------------------|-----------------|----------------|
 | Stage 1 -> 2 | RQ Brief, Annotated Bibliography, Synthesis Report | Schema 1 (RQ Brief), Schema 2 (Bibliography), Schema 3 (Synthesis) | deep-research handoff protocol |
-| Stage 2 -> 2.5 | Complete Paper Draft | Schema 4 (Paper Draft) | Pass to integrity_verification_agent |
-| Stage 2.5 -> 3 | Verified Paper Draft + Integrity Report | Schema 4 + Schema 5 (Integrity Report) | Pass to reviewer (with verification report attached) |
+| Stage 2 -> 2.5 | Complete Paper Draft + complete schema-valid `{article_id}.kg_candidates.json` | Schema 4 (Paper Draft) + `shared/contracts/kg/ars_handoff.schema.json` | Pass both artifacts to integrity_verification_agent; block as HANDOFF_INCOMPLETE if the KG handoff is missing, partial, or schema-invalid |
+| Stage 2.5 -> 3 | Verified Paper Draft + Integrity Report + Claim Verification JSON + markdown view + KG Review Update + updated complete `{article_id}.kg_candidates.json` | Schema 4 + Schema 5 (Integrity Report) + `shared/contracts/pipeline/claim_verification_report.schema.json` + `shared/contracts/kg/ars_handoff.schema.json` | Pass to reviewer with verification report attached; canonical KG handoff must include the Stage 2.5 review-status updates |
 | Stage 3 -> **coaching** -> 4 | Editorial Decision, Revision Roadmap, 5 Review Reports | Schema 6 (Review Report), Schema 7 (Revision Roadmap) | **First Socratic dialogue** -> academic-paper revision mode input |
-| Stage 4 -> 3' | Revised Draft, Response to Reviewers | Schema 4 (revised) + Schema 8 (Response to Reviewers) | Pass to reviewer (marked as verification round) |
+| Stage 4 -> 3' | Revised Draft, Response to Reviewers, KG Candidate Delta merged into canonical `{article_id}.kg_candidates.json` | Schema 4 (revised) + Schema 8 (Response to Reviewers) + `shared/contracts/kg/ars_handoff.schema.json` | Merge the Stage 4 delta into the canonical KG handoff before reviewer handoff; pass reviewer the synchronized article/KG pair |
 | Stage 3' -> **coaching** -> 4' | New Revision Roadmap (if Major) | Schema 7 (Revision Roadmap) | **First Socratic dialogue** -> academic-paper revision mode input |
-| Stage 4/4' -> 4.5 | Revised/Re-Revised Draft | Schema 4 (revised) | Pass to integrity_verification_agent (final verification) |
-| Stage 4.5 -> 5 | Final Verified Draft + Final Integrity Report | Schema 4 + Schema 5 (Integrity Report) | Produce MD -> DOCX via Pandoc when available (otherwise instructions) -> ask about LaTeX -> confirm -> PDF |
+| Stage 4/4' -> 4.5 | Revised/Re-Revised Draft + KG Candidate Delta merged into canonical `{article_id}.kg_candidates.json` | Schema 4 (revised) + `shared/contracts/kg/ars_handoff.schema.json` | Merge all Stage 4/4' deltas into the canonical KG handoff before the final integrity gate; pass the synchronized article/KG pair to integrity_verification_agent |
+| Stage 4.5 -> 5 | Final Verified Draft + Final Integrity Report + Claim Verification JSON + markdown view + KG Review Update + final complete `{article_id}.kg_candidates.json` | Schema 4 + Schema 5 (Integrity Report) + `shared/contracts/pipeline/claim_verification_report.schema.json` + `shared/contracts/kg/ars_handoff.schema.json` | Produce MD -> DOCX via Pandoc when available (otherwise instructions) -> ask about LaTeX -> confirm -> validate/package KG artifacts when present -> PDF |
 
 **All artifacts must carry a Material Passport (Schema 9)** with `origin_skill`, `origin_mode`, `origin_date`, `verification_status`, and `version_label`.
+
+**KG canonical handoff rule**: `{article_id}.kg_candidates.json` is the canonical KG handoff once Stage 2 emits it. Stage 4/4' KG Candidate Deltas are change logs only; they must be merged back into the canonical handoff before Stage 3', Stage 4.5, or Stage 5 can proceed. Stage 2.5 and 4.5 must re-emit a complete updated handoff, not only a KG Review Update.
 
 **Style Profile carry-through**: If a Style Profile (Schema 10) was produced during `academic-paper` intake (Step 10), carry it through all stages in the Material Passport. The Style Profile is consumed by `draft_writer_agent` (Stage 2) and optionally by `report_compiler_agent` (Stage 1, if applicable). The Style Profile does not affect integrity verification or review stages.
 
@@ -463,8 +467,8 @@ The cost is multiplicative: a 10-stage pipeline with cross-model enabled produce
 | Review result is Reject | Provide two options: (a) return to Stage 2 for major restructuring (b) abandon this paper |
 | Stage 3' gives Major | Enter Stage 4' (last revision opportunity); after revision, proceed directly to Stage 4.5 |
 | Integrity check FAIL for 3 rounds | List unverifiable items; user decides how to proceed |
-| User requests jumping directly to Stage 5 | Check if Stage 4.5 has been passed; if not, must do final integrity verification first |
-| Stage 5 output process | Step 1: Produce MD -> Step 2: Generate DOCX via Pandoc when available (otherwise provide instructions) -> Step 3: Ask "Need LaTeX?" -> Step 4: User confirms content is correct -> Step 5: Produce PDF (final version) |
+| User requests jumping directly to Stage 5 | Check if Stage 4.5 has been passed; if not, must do final integrity verification first; if KG artifacts exist, require final KG handoff + claim verification JSON before format-convert |
+| Stage 5 output process | Step 1: Produce MD -> Step 2: Generate DOCX via Pandoc when available (otherwise provide instructions) -> Step 3: Ask "Need LaTeX?" -> Step 4: User confirms content is correct -> Step 5: Validate/package KG artifacts when present -> Step 6: Produce PDF (final version) |
 | Error during skill execution | Do not self-repair; report error and suggest: retry / switch mode / pause. Do not skip mandatory integrity or failure-mode gates |
 
 ---
@@ -483,6 +487,7 @@ The cost is multiplicative: a 10-stage pipeline with cross-model enabled produce
 7. **Do not fabricate materials** — if a stage's output does not exist, surface the gap; do not invent
 8. **Do not skip checkpoints** — explicit user confirmation is required after each stage
 9. **Do not skip integrity checks** — Stage 2.5 and 4.5 are mandatory, no override
+10. **Do not drop KG artifacts** — once a KG handoff exists or is required at Stage 2, every downstream gate treats the complete schema-valid KG handoff and claim verification JSON as first-class stage materials
 
 ---
 
@@ -552,6 +557,8 @@ Request state_tracker_agent to produce the Progress Dashboard when needed.
 | Integrity check FAIL | Fix paper based on correction list, invoke verification again |
 | After Stage 4/4' completion | Invoke integrity_verification_agent (Mode 2: final-check) |
 | Final verification FAIL | Fix and re-verify (max 3 rounds) |
+
+Integrity handoffs must include the current canonical `{article_id}.kg_candidates.json` when one exists. Stage 2.5 and 4.5 outputs must include the structured Claim Verification JSON contract, its markdown view, a KG Review Update, and a complete updated KG handoff with the review updates applied.
 
 ---
 
