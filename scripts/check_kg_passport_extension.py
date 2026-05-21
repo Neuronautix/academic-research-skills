@@ -55,7 +55,18 @@ def semantic_errors(payload: dict) -> list[str]:
 
     triple_ids = [a.get("triple_id") for a in assertions if isinstance(a, dict)]
     if len(triple_ids) != len(set(triple_ids)):
-        errors.append("duplicate kg_assertions[].triple_id values detected")
+        seen: set[str] = set()
+        duplicate_ids = sorted(
+            {
+                triple_id
+                for triple_id in triple_ids
+                if triple_id and (triple_id in seen or seen.add(triple_id))
+            }
+        )
+        errors.append(
+            "duplicate kg_assertions[].triple_id values detected: "
+            f"{duplicate_ids}"
+        )
     known_triple_ids = {t for t in triple_ids if t}
 
     reviewed_triples: set[str] = set()
