@@ -46,6 +46,7 @@ def schema_errors(payload: dict) -> list[str]:
 def semantic_errors(payload: dict) -> list[str]:
     errors: list[str] = []
     assertions = payload.get("kg_assertions", [])
+    review_history = payload.get("kg_review_history", [])
     kg_exports = payload.get("kg_exports") or {}
     kg_schema = payload.get("kg_schema") or {}
     kg_scope = payload.get("kg_scope")
@@ -55,6 +56,20 @@ def semantic_errors(payload: dict) -> list[str]:
     triple_ids = [a.get("triple_id") for a in assertions if isinstance(a, dict)]
     if len(triple_ids) != len(set(triple_ids)):
         errors.append("duplicate kg_assertions[].triple_id values detected")
+    known_triple_ids = {t for t in triple_ids if t}
+
+    reviewed_triples: set[str] = set()
+    accepted_reviewed_triples: set[str] = set()
+    for review in review_history:
+        decision = review.get("decision")
+        for triple_id in review.get("affected_triples") or []:
+            reviewed_triples.add(triple_id)
+            if decision == "accepted":
+                accepted_reviewed_triples.add(triple_id)
+            if triple_id not in known_triple_ids:
+                errors.append(
+                    f"kg_review_history references unknown triple_id '{triple_id}'"
+                )
 
     for assertion in assertions:
         status = assertion.get("review_status")
@@ -88,6 +103,18 @@ def semantic_errors(payload: dict) -> list[str]:
             errors.append(
                 f"kg_exports.clean_kg_eligible=true but unresolved assertion statuses exist: {sorted(unresolved)}"
             )
+        for assertion in assertions:
+            triple_id = assertion.get("triple_id")
+            status = assertion.get("review_status")
+            if status in {"accepted", "human_reviewed", "rejected", "superseded"}:
+                if triple_id not in reviewed_triples:
+                    errors.append(
+                        f"kg_exports.clean_kg_eligible=true requires review history for assertion {triple_id} status={status}"
+                    )
+            if status == "accepted" and triple_id not in accepted_reviewed_triples:
+                errors.append(
+                    f"kg_exports.clean_kg_eligible=true requires accepted reviewer decision for assertion {triple_id}"
+                )
 
     if payload.get("kg_schema"):
         if hitl_gate.get("user_validated") is not True:

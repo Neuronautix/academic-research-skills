@@ -214,6 +214,14 @@ Do not silently delete obsolete items during the pipeline; preserve them as `rej
 - Stage 4.5 FINAL INTEGRITY: re-check KG synchronization and update review statuses from final claim verification.
 - Stage 5 FINALIZE: include the final KG handoff JSON with the output package when present.
 
+## KG-4 Review Traceability Gate
+
+Before clean export eligibility is marked true in passport (`kg_exports.clean_kg_eligible=true`):
+
+- `kg_review_history[].affected_triples` should only reference existing `kg_assertions[].triple_id` values.
+- Every resolved assertion (`accepted`, `human_reviewed`, `rejected`, `superseded`) should have reviewer traceability in `kg_review_history`.
+- Assertions marked `accepted` should include at least one corresponding `kg_review_history` decision of `accepted`.
+
 ## KG Evidence Audit Blocking Classes (HIGH-WARN-KG)
 
 KG clean export must block while unresolved findings exist for:

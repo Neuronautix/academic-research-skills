@@ -89,6 +89,38 @@ class TestCheckKgPassportExtension(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("not declared in kg_schema.predicates", result.stdout + result.stderr)
 
+    def test_clean_kg_eligible_requires_accepted_review_decision(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            payload["kg_review_history"][0]["decision"] = "rejected"
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("requires accepted reviewer decision", result.stdout + result.stderr)
+
+    def test_clean_kg_eligible_requires_review_history_trace(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            payload["kg_review_history"] = []
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("requires review history", result.stdout + result.stderr)
+
+    def test_review_history_unknown_triple_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_review_history"][0]["affected_triples"] = ["kg_t_unknown"]
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("references unknown triple_id", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
