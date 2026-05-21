@@ -79,10 +79,122 @@ The architecture doc supersedes the sprawling pipeline description that used to 
 - **Academic Paper** — 12-agent paper writing with Style Calibration, Writing Quality Check, LaTeX hardening, visualization, revision coaching, citation conversion, anti-leakage protocol, and VLM figure verification.
 - **Academic Paper Reviewer** — 7-agent multi-perspective peer review with 0–100 quality rubrics (EIC + 3 dynamic reviewers + Devil's Advocate), concession threshold protocol, attack intensity preservation, optional cross-model DA critique / calibration, R&R traceability matrix, read-only constraint.
 - **Academic Pipeline** — 10-stage pipeline orchestrator with adaptive checkpoints, claim verification, Material Passport, optional `repro_lock`, optional cross-model integrity verification, mid-conversation reinforcement, and score trajectory tracking.
+- **KG-ready research handoff** — optional knowledge-graph process that keeps `{article_id}.kg_candidates.json` synchronized with the manuscript, claim verification, Material Passport KG extension fields, review history, and export manifests. Schema validators block malformed handoffs and unresolved `HIGH-WARN-KG` findings before clean KG export.
 - **Data Access Level Metadata** (v3.3.2+) — every skill declares `data_access_level` (`raw` / `redacted` / `verified_only`); enforced by `scripts/check_data_access_level.py`. Pattern adapted from Anthropic's automated-w2s-researcher (2026). See [`shared/ground_truth_isolation_pattern.md`](shared/ground_truth_isolation_pattern.md).
 - **Task Type Annotation** (v3.3.2+) — every skill declares `task_type` (`open-ended` or `outcome-gradable`). All current ARS skills are `open-ended`.
 - **Benchmark Report Schema** (v3.3.5+) — JSON Schema + lint for honest benchmark comparisons. See [`shared/benchmark_report_pattern.md`](shared/benchmark_report_pattern.md).
 - **Artifact Reproducibility Lockfile** (v3.3.5+) — optional `repro_lock` sub-block on Material Passport. **Configuration documentation, not replay guarantee** — LLM outputs are not byte-reproducible. See [`shared/artifact_reproducibility_pattern.md`](shared/artifact_reproducibility_pattern.md).
+
+---
+
+## Knowledge Graph Process
+
+The KG process turns ARS outputs into a machine-checkable graph handoff instead of a loose end-of-run markdown summary. When KG mode is used, the pipeline maintains a canonical `{article_id}.kg_candidates.json` beside `article.md`.
+
+What it does:
+
+- Emits stable `Paper`, `Concept`, `Claim`, and `Evidence` items with source anchors, supporting spans, citation IDs, confidence rationales, and reviewer decisions.
+- Carries explicit graph edges in `links[]`, including support, contradiction, and neutral polarity labels.
+- Synchronizes claim-verification verdicts back into KG review statuses through deterministic `kg_review_update` fields.
+- Preserves revision history: changed, removed, superseded, and newly added claims/concepts/evidence are updated rather than silently deleted.
+- Adds optional Material Passport KG fields: `kg_scope`, `kg_schema`, `kg_assertions`, `kg_review_history`, and `kg_exports`.
+- Blocks clean KG export while unresolved `HIGH-WARN-KG` findings remain, including unsupported triples, anchorless assertions, fabricated sources, relation misclassification, entity merge conflicts, and unresolved contradictions.
+- Builds an optional KG-ready package containing the article, KG handoff, claim verification JSON, optional KG audit/export files, and `manifest.json`.
+
+Primary files:
+
+- Protocol: [`academic-pipeline/references/kg_handoff_protocol.md`](academic-pipeline/references/kg_handoff_protocol.md)
+- Schemas: [`shared/contracts/kg/ars_handoff.schema.json`](shared/contracts/kg/ars_handoff.schema.json), [`shared/contracts/kg/kg_audit_report.schema.json`](shared/contracts/kg/kg_audit_report.schema.json), [`shared/contracts/pipeline/claim_verification_report.schema.json`](shared/contracts/pipeline/claim_verification_report.schema.json), [`shared/contracts/passport/kg_passport_extension.schema.json`](shared/contracts/passport/kg_passport_extension.schema.json)
+- Validators: `scripts/check_kg_handoff.py`, `scripts/check_kg_audit_report.py`, `scripts/check_claim_verification_report.py`, `scripts/check_kg_passport_extension.py`
+- Export builder: `scripts/build_kg_ready_export.py`
+
+Pipeline touchpoints:
+
+| Stage | KG behavior |
+|---|---|
+| Stage 2 WRITE | Emit initial `{article_id}.kg_candidates.json` after the complete draft. |
+| Stage 2.5 INTEGRITY | Validate and update KG review statuses from claim verification and integrity findings. |
+| Stage 4 / 4' REVISE | Emit and merge KG candidate deltas for changed, removed, or new manuscript content. |
+| Stage 4.5 FINAL INTEGRITY | Re-check manuscript/KG synchronization and final claim-verification status. |
+| Stage 5 FINALIZE | Include the final KG handoff and optional clean KG export package when present. |
+
+### Test the KG process locally
+
+1. Install development dependencies:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+```
+
+2. Validate the shipped KG handoff fixture:
+
+```bash
+python3 scripts/check_kg_handoff.py tests/fixtures/kg_contract/good_kg_handoff.json
+```
+
+Expected result: `OK: ... is a valid KG handoff package (schema + semantics)`.
+
+3. Validate the claim verification contract:
+
+```bash
+python3 scripts/check_claim_verification_report.py tests/fixtures/kg_contract/good_claim_verification_report.json
+```
+
+Expected result: `OK: ... is a valid claim verification contract (schema + semantics)`.
+
+4. Validate the KG audit report contract:
+
+```bash
+python3 scripts/check_kg_audit_report.py tests/fixtures/kg_contract/good_kg_audit_report.json
+```
+
+Expected result: schema/semantic validation passes. This fixture intentionally contains one unresolved HIGH-WARN finding, so it is valid as an audit report but blocks clean export in step 7.
+
+5. Validate the Material Passport KG extension:
+
+```bash
+python3 scripts/check_kg_passport_extension.py tests/fixtures/kg_contract/good_passport_with_kg_extension.yaml
+```
+
+Expected result: `OK: ... is valid for KG passport extension fields`.
+
+6. Build a minimal KG-ready package without an audit report:
+
+```bash
+python3 scripts/build_kg_ready_export.py \
+  --article tests/fixtures/kg_contract/article.md \
+  --kg-handoff tests/fixtures/kg_contract/good_kg_handoff.json \
+  --claim-verification tests/fixtures/kg_contract/good_claim_verification_report.json \
+  --output-dir /tmp/ars-kg-export
+```
+
+Expected result: `OK: KG-ready export package built at /tmp/ars-kg-export`, with `article.md`, `good_kg_handoff.json`, `good_claim_verification_report.json`, and `manifest.json` in the output directory.
+
+7. Confirm unresolved HIGH-WARN-KG findings block clean export:
+
+```bash
+python3 scripts/build_kg_ready_export.py \
+  --article tests/fixtures/kg_contract/article.md \
+  --kg-handoff tests/fixtures/kg_contract/good_kg_handoff.json \
+  --claim-verification tests/fixtures/kg_contract/good_claim_verification_report.json \
+  --kg-audit-report tests/fixtures/kg_contract/good_kg_audit_report.json \
+  --output-dir /tmp/ars-kg-export-blocked
+```
+
+Expected result: exit code `1` and `clean KG export blocked: unresolved HIGH-WARN-KG findings present in KG audit report`.
+
+8. Run the focused unit tests:
+
+```bash
+python3 -m pytest \
+  scripts/test_check_kg_handoff.py \
+  scripts/test_check_kg_audit_report.py \
+  scripts/test_check_claim_verification_report.py \
+  scripts/test_check_kg_passport_extension.py \
+  scripts/test_build_kg_ready_export.py
+```
+
+Expected result: all focused KG contract/export tests pass.
 
 ---
 
