@@ -33,6 +33,7 @@ If downstream work is needed, return control to the caller. The v3.6.6 generator
 4. **Register consistency** — maintain discipline-appropriate academic tone throughout
 5. **Word count awareness** — track progress against allocation; report deviations
 6. **Revision efficiency** — when revising, address feedback items systematically
+7. **KG synchronization** — Stage 2 emits the initial complete schema-valid `{article_id}.kg_candidates.json`; revision stages emit KG Candidate Deltas that the pipeline merges back into the canonical handoff before the next gate
 
 ## Writing Process
 
@@ -156,6 +157,35 @@ When receiving feedback from peer_reviewer_agent (Phase 6 -> back to Phase 4):
 | 3 | Reviewer | Minor | Awkward transition | 4->5 | Rewritten | Resolved |
 ```
 
+### KG Candidate Handoff / Delta
+
+When the pipeline provides or requires `{article_id}.kg_candidates.json`, treat KG artifacts as stage materials, not optional notes.
+
+- In initial Stage 2 drafting, emit a complete `{article_id}.kg_candidates.json` that validates against `shared/contracts/kg/ars_handoff.schema.json` and includes all current claims, concepts, evidence, links, review statuses, and required per-item fields.
+- In Stage 4 or 4' revision, emit a concise KG Candidate Delta after the revised draft and Response to Reviewers. The delta must cover every added, changed, or removed claim, concept, evidence item, and link.
+- Do not replace the complete handoff with the delta. The pipeline will merge the delta into the canonical handoff before Stage 3', Stage 4.5, or Stage 5; make the delta deterministic enough to merge by stable IDs.
+
+```markdown
+| KG Item ID | Type | Change | Section | Status | Note |
+|------------|------|--------|---------|--------|------|
+| claim:article-123:c017 | Claim | changed | 3.2 | needs_revision | claim wording changed; re-verify support |
+| concept:article-123:qa | Concept | added | 2.1 | pending | new key concept introduced |
+| evidence:article-123:e017a | Evidence | removed | 3.2 | rejected | obsolete: supporting paragraph removed |
+```
+
+Use the KG handoff protocol from `academic-pipeline/references/kg_handoff_protocol.md`: new claims/concepts/evidence start as `pending`, changed claims reset to `pending` or `needs_revision` unless already re-verified, removed items become `rejected` with an obsolete note, and verified unchanged claims may remain `accepted`.
+
+When creating or updating KG candidates, emit graph-ready fields directly (do not rely on post-hoc parsing):
+- stable item IDs and stable edge IDs
+- explicit claim→evidence→concept links (`links[]` + `related_*_ids`)
+- contradiction/support polarity labels on edges
+- normalized concept labels (`canonical_label`) + aliases
+- per-item confidence + confidence rationale
+- source anchors and citation identifiers
+- reviewer decision object (`decision_by`, `decision_at`, `rationale`)
+
+Stage 2 completeness requirement: the handoff must include all current manuscript `Claim`, `Concept`, and `Evidence` candidates plus the `links[]` edge list. If a required KG field cannot be populated, mark the output HANDOFF_INCOMPLETE instead of emitting a partial JSON file.
+
 ## Output Format
 
 ```markdown
@@ -174,6 +204,9 @@ When receiving feedback from peer_reviewer_agent (Phase 6 -> back to Phase 4):
 | Sections Completed | [N/N] |
 | Citations Used | [N] |
 | Revision Round | [0/1/2] |
+
+### KG Candidate Delta
+[Stage 2: provide path/name of the complete schema-valid `{article_id}.kg_candidates.json`. Stage 4/4': list added/changed/removed KG candidates; otherwise state "No KG candidate changes detected."]
 
 ### Word Count by Section
 | Section | Target | Actual | Deviation |

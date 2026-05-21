@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ars.local/schemas/kg/ars_handoff.schema.json",
+  "title": "ARS KG Handoff Contract",
+  "description": "Machine-readable KG handoff contract for ARS runtime output.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "article_id",
+    "title",
+    "run_id",
+    "source_document",
+    "run_metadata",
+    "items",
+    "links"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "article_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_document": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pipeline_stage",
+        "ars_version",
+        "generated_at",
+        "generator_agent"
+      ],
+      "properties": {
+        "pipeline_stage": {
+          "type": "string",
+          "enum": [
+            "2",
+            "2.5",
+            "4",
+            "4.5",
+            "5"
+          ]
+        },
+        "ars_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "generator_agent": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/link"
+      }
+    }
+  },
+  "$defs": {
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_review",
+        "accepted",
+        "rejected",
+        "needs_revision",
+        "candidate",
+        "evidence_supported",
+        "human_reviewed",
+        "superseded"
+      ]
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "finding",
+        "hypothesis",
+        "limitation",
+        "method",
+        "background",
+        "methodological"
+      ]
+    },
+    "modality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "observed",
+        "reported",
+        "inferred",
+        "hypothesized",
+        "speculative"
+      ]
+    },
+    "lifecycle_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "decision_by",
+        "decision_at",
+        "rationale"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/review_status"
+        },
+        "decision_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "review_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_by",
+        "decision_at",
+        "rationale"
+      ],
+      "properties": {
+        "decision_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "source_document",
+        "source_section",
+        "source_anchor",
+        "supporting_quote_or_span",
+        "source_citation_id",
+        "confidence",
+        "confidence_rationale",
+        "extraction_method",
+        "review_status",
+        "review_decision"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(paper|concept|claim|evidence):.+:.+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Paper",
+            "Concept",
+            "Claim",
+            "Evidence"
+          ]
+        },
+        "source_document": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_section": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supporting_quote_or_span": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_citation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_citation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "confidence_rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extraction_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_status": {
+          "$ref": "#/$defs/review_status"
+        },
+        "review_decision": {
+          "$ref": "#/$defs/review_decision"
+        },
+        "claim_type": {
+          "$ref": "#/$defs/claim_type"
+        },
+        "modality": {
+          "$ref": "#/$defs/modality"
+        },
+        "qualifiers": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "status_history": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/lifecycle_event"
+          }
+        },
+        "canonical_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "iri": {
+          "type": "string",
+          "pattern": "^https?://.+"
+        },
+        "related_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "related_concept_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "reviewer_notes": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Concept"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "canonical_label",
+              "aliases"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Claim"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "related_evidence_ids",
+              "related_concept_ids",
+              "claim_type",
+              "modality"
+            ]
+          }
+        }
+      ]
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from_id",
+        "to_id",
+        "relation_type",
+        "polarity",
+        "confidence",
+        "rationale"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "from_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relation_type": {
+          "type": "string",
+          "enum": [
+            "claim_supported_by_evidence",
+            "claim_contradicted_by_evidence",
+            "claim_about_concept",
+            "evidence_about_concept",
+            "uses_system",
+            "measures_endpoint",
+            "reports_finding",
+            "has_species",
+            "has_strain",
+            "uses_assay",
+            "requires_metadata",
+            "compares_condition",
+            "supports_claim",
+            "contradicts_claim",
+            "has_limitation",
+            "derived_from_source"
+          ]
+        },
+        "polarity": {
+          "type": "string",
+          "enum": [
+            "support",
+            "contradiction",
+            "neutral"
+          ]
+        },
+        "review_status": {
+          "$ref": "#/$defs/review_status"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

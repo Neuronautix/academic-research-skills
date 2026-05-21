@@ -373,6 +373,26 @@ jobs:
           pip install pytest pyyaml jsonschema
           pytest scripts/test_run_codex_audit_e2e.py -v
 
+      - name: Validate KG handoff + claim verification contract fixtures
+        env:
+          PYTHONPATH: .
+        run: |
+          python3 scripts/check_kg_handoff.py tests/fixtures/kg_contract/good_kg_handoff.json
+          python3 scripts/check_claim_verification_report.py tests/fixtures/kg_contract/good_claim_verification_report.json
+          python3 scripts/check_kg_audit_report.py tests/fixtures/kg_contract/good_kg_audit_report.json
+          python3 scripts/check_kg_passport_extension.py tests/fixtures/kg_contract/good_passport_with_kg_extension.yaml
+
+      - name: Run KG handoff / claim verification / KG-ready export unit tests
+        env:
+          PYTHONPATH: .
+        run: |
+          python3 -m unittest \
+            scripts.test_check_kg_handoff \
+            scripts.test_check_kg_audit_report \
+            scripts.test_check_claim_verification_report \
+            scripts.test_check_kg_passport_extension \
+            scripts.test_build_kg_ready_export -v
+
       - name: "Check policy anchor table structural lint (#108)"
         run: python3 scripts/check_policy_anchor_table.py
 
@@ -393,4 +413,3 @@ jobs:
         env:
           PYTHONPATH: .
         run: python3 -m unittest scripts.test_policy_anchor_disclosure -v
-

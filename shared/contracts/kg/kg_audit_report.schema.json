@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ars.local/schemas/kg/kg_audit_report.schema.json",
+  "title": "ARS KG Evidence Alignment Audit Report",
+  "description": "Machine-readable KG audit report for evidence alignment and export blocking checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "audit_id",
+    "article_id",
+    "run_id",
+    "generated_at",
+    "summary",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "article_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_findings",
+        "unresolved_high_warn_count",
+        "blocking"
+      ],
+      "properties": {
+        "total_findings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved_high_warn_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocking": {
+          "type": "boolean"
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "code",
+        "severity",
+        "status",
+        "rationale"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "HIGH-WARN-KG-UNSUPPORTED-TRIPLE",
+            "HIGH-WARN-KG-ANCHORLESS",
+            "HIGH-WARN-KG-FABRICATED-SOURCE",
+            "HIGH-WARN-KG-RELATION-MISCLASSIFIED",
+            "HIGH-WARN-KG-ENTITY-MERGE-CONFLICT",
+            "HIGH-WARN-KG-CONTRADICTION-UNRESOLVED"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "HIGH-WARN"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "resolved",
+            "waived"
+          ]
+        },
+        "triple_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "related_triples": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

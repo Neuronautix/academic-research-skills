@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0.0",
+  "article_id": "article-123",
+  "title": "Demo Article",
+  "run_id": "run-001",
+  "source_document": "article.md",
+  "run_metadata": {
+    "pipeline_stage": "2.5",
+    "ars_version": "v3.7.0",
+    "generated_at": "2026-05-19T18:00:00Z",
+    "generator_agent": "integrity_verification_agent"
+  },
+  "items": [
+    {
+      "id": "concept:article-123:qa",
+      "type": "Concept",
+      "source_document": "article.md",
+      "source_section": "Introduction",
+      "source_anchor": "sec:intro:p2",
+      "supporting_quote_or_span": "quality assurance in higher education",
+      "source_citation_id": "S01",
+      "source_citation": "Wang 2024",
+      "confidence": 0.91,
+      "confidence_rationale": "Concept explicitly defined in section.",
+      "extraction_method": "ars_hitl",
+      "review_status": "accepted",
+      "review_decision": {
+        "decision_by": "integrity_verification_agent",
+        "decision_at": "2026-05-19T18:00:00Z",
+        "rationale": "Definition stable."
+      },
+      "canonical_label": "Quality Assurance",
+      "aliases": [
+        "QA"
+      ],
+      "iri": "https://example.org/qa"
+    },
+    {
+      "id": "evidence:article-123:e001",
+      "type": "Evidence",
+      "source_document": "article.md",
+      "source_section": "Results",
+      "source_anchor": "sec:results:p3",
+      "supporting_quote_or_span": "Completion rate improved from 70% to 82%.",
+      "source_citation_id": "S02",
+      "source_citation": "Chen 2025",
+      "confidence": 0.88,
+      "confidence_rationale": "Numerical evidence directly quoted.",
+      "extraction_method": "ars_hitl",
+      "review_status": "accepted",
+      "review_decision": {
+        "decision_by": "integrity_verification_agent",
+        "decision_at": "2026-05-19T18:01:00Z",
+        "rationale": "Matched to source."
+      }
+    },
+    {
+      "id": "claim:article-123:c001",
+      "type": "Claim",
+      "source_document": "article.md",
+      "source_section": "Discussion",
+      "source_anchor": "sec:discussion:p1",
+      "supporting_quote_or_span": "AI-assisted formative assessment improved completion outcomes.",
+      "source_citation_id": "S02",
+      "source_citation": "Chen 2025",
+      "confidence": 0.86,
+      "confidence_rationale": "Directly linked to quantified result.",
+      "extraction_method": "ars_hitl",
+      "claim_type": "finding",
+      "modality": "reported",
+      "review_status": "accepted",
+      "review_decision": {
+        "decision_by": "integrity_verification_agent",
+        "decision_at": "2026-05-19T18:02:00Z",
+        "rationale": "Verified against source and manuscript."
+      },
+      "related_evidence_ids": [
+        "evidence:article-123:e001"
+      ],
+      "related_concept_ids": [
+        "concept:article-123:qa"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "link-001",
+      "from_id": "claim:article-123:c001",
+      "to_id": "evidence:article-123:e001",
+      "relation_type": "claim_supported_by_evidence",
+      "polarity": "support",
+      "confidence": 0.9,
+      "rationale": "Claim sentence summarizes evidence span."
+    },
+    {
+      "id": "link-002",
+      "from_id": "claim:article-123:c001",
+      "to_id": "concept:article-123:qa",
+      "relation_type": "claim_about_concept",
+      "polarity": "support",
+      "confidence": 0.83,
+      "rationale": "Claim concerns QA effects."
+    }
+  ]
+}

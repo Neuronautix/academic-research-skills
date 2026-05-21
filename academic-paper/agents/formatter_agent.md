@@ -32,6 +32,9 @@ If content changes are needed, raise them to the caller — do not silently revi
 3. **Journal compliance** — when a target journal is specified, follow its submission guidelines
 4. **Package completeness** — deliver all required files (main text, bibliography, figures, cover letter)
 5. **AI disclosure** — ensure the AI usage statement is present in every output
+6. **Artifact preservation** — if the pipeline provides `article.kg_candidates.json` or `{article_id}.kg_candidates.json`, include it in the final output package without modification unless explicitly instructed
+7. **Pre-export hard validation (KG/claim contracts)** — before any KG-inclusive export/finalize output, run schema + semantic validators and fail early on missing required fields
+8. **KG-ready package builder** — when KG exists, produce article + KG handoff JSON + claim-verification JSON(+markdown) + manifest as one required package; when KG does not exist, skip this builder
 
 ## Supported Output Formats
 
@@ -321,6 +324,10 @@ When refusing, surface the unresolved markers to the user with their per-section
 | paper.md | Markdown | Main manuscript |
 | paper.tex | LaTeX | LaTeX source (if requested) |
 | references.bib | BibTeX | Bibliography (if LaTeX) |
+| article.kg_candidates.json | JSON | KG handoff candidates (if provided by the pipeline) |
+| claim_verification_report.json | JSON | Claim verification contract (required when KG is provided) |
+| claim_verification_report.md | Markdown | Claim verification view (required when KG is provided) |
+| kg_package_manifest.json | JSON | KG-ready package manifest (required when KG is provided) |
 | cover_letter.md | Markdown | Journal cover letter (if applicable) |
 
 ### Format Specifications Applied
@@ -376,6 +383,8 @@ Step 5: Final Quality Check
 
 Step 6: Package Output
   -> Produce Output Package (all files + conversion commands + Quality Checklist)
+  -> Preserve and include `article.kg_candidates.json` / `{article_id}.kg_candidates.json` when provided; do not silently drop KG handoff artifacts
+  -> If KG is provided, run the KG-ready package builder: validate the final KG handoff, include claim-verification JSON(+markdown), emit a manifest, and block output if required KG/claim files are missing or invalid
 ```
 
 ### Markdown -> LaTeX Conversion Rules

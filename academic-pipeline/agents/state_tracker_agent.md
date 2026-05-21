@@ -50,9 +50,12 @@ Every material artifact produced by the pipeline carries a version label. These 
 | Research output | `research_v{N}` | `research_v1` (initial), `research_v2` (after keyword expansion) | Schema 1-3 |
 | Paper draft | `paper_draft_v{N}` | `paper_draft_v1` (initial), `paper_draft_v2` (post-review revision) | Schema 4 |
 | Integrity report | `integrity_{mid|final}_v{N}` | `integrity_mid_v1`, `integrity_final_v1` | Schema 5 |
+| KG handoff | `kg_handoff_v{N}` | `kg_handoff_v1` (Stage 2), `kg_handoff_v2` (post-integrity), `kg_handoff_v3` (post-revision merge) | `shared/contracts/kg/ars_handoff.schema.json` |
+| Claim verification report | `claim_verification_{mid|final}_v{N}` | `claim_verification_mid_v1`, `claim_verification_final_v1` | `shared/contracts/pipeline/claim_verification_report.schema.json` |
 | Review report | `review_v{N}` | `review_v1` (initial review), `review_v2` (re-review after revision) | Schema 6 |
 | Revision roadmap | `roadmap_v{N}` | `roadmap_v1` (first review), `roadmap_v2` (re-review) | Schema 7 |
 | Revision | `revision_v{N}` | `revision_v1` (first revision round) | Schema 8 |
+| KG candidate delta | `kg_delta_v{N}` | `kg_delta_v1` (Stage 4), `kg_delta_v2` (Stage 4') | KG delta table; must be merged into canonical KG handoff before the next gate |
 
 **Rules**:
 - Version numbers are monotonically increasing (never reused)
@@ -61,6 +64,7 @@ Every material artifact produced by the pipeline carries a version label. These 
 - The `current_version` pointer indicates which version is active
 - Cross-references between materials use explicit version labels (e.g., "review_v1 references paper_draft_v1")
 - Version labels in state tracker must match the Material Passport `version_label` field
+- The canonical KG handoff pointer must always reference the latest complete schema-valid `{article_id}.kg_candidates.json`; KG deltas are not canonical materials until merged
 
 ---
 
@@ -97,7 +101,7 @@ Every material artifact produced by the pipeline carries a version label. These 
       "skill": "academic-paper",
       "status": "completed",
       "mode": "plan -> full",
-      "outputs": ["Paper Draft (5,200 words, IMRaD)"],
+      "outputs": ["Paper Draft (5,200 words, IMRaD)", "complete {article_id}.kg_candidates.json"],
       "started_at": "conversation turn #16",
       "completed_at": "conversation turn #28",
       "checkpoint_confirmed": true,
@@ -113,7 +117,7 @@ Every material artifact produced by the pipeline carries a version label. These 
       "status": "completed",
       "mode": "pre-review",
       "verdict": "PASS",
-      "outputs": ["Integrity Report (Pre-review)", "62/62 refs verified", "0 issues"],
+      "outputs": ["Integrity Report (Pre-review)", "Claim Verification JSON", "Claim Verification Markdown", "KG Review Update", "updated complete {article_id}.kg_candidates.json", "62/62 refs verified", "0 issues"],
       "retry_count": 0,
       "issues_found": 0,
       "issues_fixed": 0,
@@ -150,7 +154,7 @@ Every material artifact produced by the pipeline carries a version label. These 
       "revision_round": 1,
       "items_addressed": 5,
       "items_total": 5,
-      "outputs": ["Revised Draft", "Response to Reviewers"],
+      "outputs": ["Revised Draft", "Response to Reviewers", "KG Candidate Delta", "merged complete {article_id}.kg_candidates.json"],
       "started_at": "conversation turn #37",
       "completed_at": "conversation turn #42",
       "checkpoint_confirmed": true,
@@ -259,7 +263,7 @@ Every material artifact produced by the pipeline carries a version label. These 
     },
     {
       "transition": "2 -> 2.5",
-      "schemas_checked": ["Schema 4 (Paper Draft)"],
+      "schemas_checked": ["Schema 4 (Paper Draft)", "shared/contracts/kg/ars_handoff.schema.json"],
       "result": "PASS",
       "missing_fields": [],
       "timestamp": "conversation turn #28"
@@ -271,16 +275,25 @@ Every material artifact produced by the pipeline carries a version label. These 
     "bibliography": true,
     "synthesis_report": true,
     "paper_draft": true,
+    "kg_handoff_current": true,
+    "kg_delta_unmerged": false,
     "integrity_report_pre": true,
+    "claim_verification_pre_json": true,
+    "claim_verification_pre_markdown": true,
+    "kg_review_update_pre": true,
     "verified_paper_draft": true,
     "review_reports": true,
     "editorial_decision": true,
     "revision_roadmap": true,
     "revised_draft": true,
     "response_to_reviewers": true,
+    "kg_candidate_delta": true,
     "re_review_report": true,
     "re_revised_draft": false,
     "integrity_report_final": false,
+    "claim_verification_final_json": false,
+    "claim_verification_final_markdown": false,
+    "kg_review_update_final": false,
     "final_paper": false
   },
   "team": {
@@ -347,16 +360,25 @@ Legal material_name values (v2.0 additions marked with **):
 - `bibliography`: Bibliography
 - `synthesis_report`: Synthesis report
 - `paper_draft`: Paper draft
+- **`kg_handoff_current`**: Complete schema-valid `{article_id}.kg_candidates.json`; required after Stage 2 when KG is active
+- `kg_delta_unmerged`: True only while a Stage 4/4' KG Candidate Delta has not yet been merged into the canonical handoff; blocks the next gate
 - **`integrity_report_pre`**: Pre-review integrity verification report
+- **`claim_verification_pre_json`**: Structured pre-review Claim Verification JSON contract
+- **`claim_verification_pre_markdown`**: Human-readable pre-review Claim Verification view
+- **`kg_review_update_pre`**: Pre-review KG Review Update applied to the canonical handoff
 - **`verified_paper_draft`**: Integrity-verified paper
 - `review_reports`: Review reports
 - `editorial_decision`: Editorial decision
 - `revision_roadmap`: Revision roadmap
 - `revised_draft`: Revised draft
 - `response_to_reviewers`: Response to reviewers
+- `kg_candidate_delta`: KG Candidate Delta emitted by Stage 4/4' revision
 - **`re_review_report`**: Verification review report
 - **`re_revised_draft`**: Second revised draft
 - **`integrity_report_final`**: Final integrity verification report
+- **`claim_verification_final_json`**: Structured final Claim Verification JSON contract
+- **`claim_verification_final_markdown`**: Human-readable final Claim Verification view
+- **`kg_review_update_final`**: Final KG Review Update applied to the canonical handoff
 - `final_paper`: Final paper
 
 ### 4. update_integrity(stage_id, verdict, details)
@@ -381,13 +403,13 @@ Check whether prerequisite materials for entering the specified stage are availa
 |-------------|-------------------|----------------------|
 | Stage 1 | None (can start from scratch) | User-provided topic/direction |
 | Stage 2 | None (but Stage 1 output recommended) | RQ Brief, Bibliography, Synthesis |
-| Stage 2.5 | Paper Draft | -- |
-| Stage 3 | **Verified Paper Draft + Integrity Report (Pre)** | -- |
+| Stage 2.5 | Paper Draft + complete schema-valid `{article_id}.kg_candidates.json` | -- |
+| Stage 3 | **Verified Paper Draft + Integrity Report (Pre) + Claim Verification JSON + updated complete `{article_id}.kg_candidates.json`** | -- |
 | Stage 4 | Review Reports + Revision Roadmap | Paper Draft |
-| Stage 3' | Revised Draft | Response to Reviewers |
+| Stage 3' | Revised Draft + KG Candidate Delta merged into canonical `{article_id}.kg_candidates.json` | Response to Reviewers |
 | Stage 4' | Re-Review Report (Decision: Major) | Revised Draft |
-| Stage 4.5 | Revised Draft or Re-Revised Draft | -- |
-| Stage 5 | **Integrity Report (Final) — verdict: PASS** | -- |
+| Stage 4.5 | Revised Draft or Re-Revised Draft + current canonical `{article_id}.kg_candidates.json` with all Stage 4/4' deltas merged | -- |
+| Stage 5 | **Integrity Report (Final) — verdict: PASS + Claim Verification JSON + final complete `{article_id}.kg_candidates.json` when KG exists** | -- |
 
 **Return format:**
 ```
