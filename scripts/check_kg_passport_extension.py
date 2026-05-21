@@ -52,6 +52,17 @@ def semantic_errors(payload: dict) -> list[str]:
     kg_scope = payload.get("kg_scope")
     hitl_gate = kg_schema.get("hitl_gate") or {}
     schema_predicates = set(kg_schema.get("predicates") or [])
+    export_suffix_rules = {
+        "jsonld": (".jsonld",),
+        "ttl": (".ttl",),
+        "graphml": (".graphml",),
+        "kg_nodes_csv": (".csv",),
+        "kg_edges_csv": (".csv",),
+        "evidence_index": (".jsonl",),
+        "kg_review_report": (".md",),
+        "kg_schema": (".yaml", ".yml"),
+        "kg_shacl_shapes": (".ttl",),
+    }
 
     triple_ids = [a.get("triple_id") for a in assertions if isinstance(a, dict)]
     if len(triple_ids) != len(set(triple_ids)):
@@ -107,6 +118,11 @@ def semantic_errors(payload: dict) -> list[str]:
         for field in required:
             if field not in payload:
                 errors.append(f"kg_exports.clean_kg_eligible=true requires field {field}")
+        for export_field in export_suffix_rules:
+            if not kg_exports.get(export_field):
+                errors.append(
+                    f"kg_exports.clean_kg_eligible=true requires kg_exports.{export_field}"
+                )
         unresolved = [
             a.get("triple_id")
             for a in assertions
@@ -127,6 +143,31 @@ def semantic_errors(payload: dict) -> list[str]:
             if status == "accepted" and triple_id not in accepted_reviewed_triples:
                 errors.append(
                     f"kg_exports.clean_kg_eligible=true requires accepted reviewer decision for assertion {triple_id}"
+                )
+        export_paths = {
+            field: value for field, value in kg_exports.items() if field in export_suffix_rules and value
+        }
+        seen_paths: set[str] = set()
+        duplicate_paths: set[str] = set()
+        for path in export_paths.values():
+            if path in seen_paths:
+                duplicate_paths.add(path)
+            else:
+                seen_paths.add(path)
+        if duplicate_paths:
+            errors.append(
+                "kg_exports.clean_kg_eligible=true requires unique export paths; "
+                f"duplicates detected: {sorted(duplicate_paths)}"
+            )
+        for field, path in export_paths.items():
+            if path.startswith("/"):
+                errors.append(
+                    f"kg_exports.{field} should be a relative export pointer, got absolute path '{path}'"
+                )
+            allowed_suffixes = export_suffix_rules[field]
+            if not path.lower().endswith(tuple(s.lower() for s in allowed_suffixes)):
+                errors.append(
+                    f"kg_exports.{field} must end with {allowed_suffixes}, got '{path}'"
                 )
 
     if payload.get("kg_schema"):

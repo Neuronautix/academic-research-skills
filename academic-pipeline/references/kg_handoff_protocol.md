@@ -222,6 +222,35 @@ Before clean export eligibility is marked true in passport (`kg_exports.clean_kg
 - Every resolved assertion (`accepted`, `human_reviewed`, `rejected`, `superseded`) should have reviewer traceability in `kg_review_history`.
 - Assertions marked `accepted` should include at least one corresponding `kg_review_history` decision of `accepted`.
 
+## KG-5 Export Completeness Gate
+
+Before `kg_exports.clean_kg_eligible=true` is asserted, export manifest pointers should be present for:
+
+- `jsonld`
+- `ttl`
+- `graphml`
+- `kg_nodes_csv`
+- `kg_edges_csv`
+- `evidence_index`
+- `kg_review_report`
+- `kg_schema`
+- `kg_shacl_shapes`
+
+## KG-6 Export Path Hygiene Gate
+
+For clean export pointers in `kg_exports`:
+
+- Paths should be unique across export entries (no aliasing distinct formats to the same file path).
+- Paths should be relative manifest pointers (not absolute filesystem paths).
+- File suffixes should match expected formats:
+  - `jsonld` → `.jsonld`
+  - `ttl` / `kg_shacl_shapes` → `.ttl`
+  - `graphml` → `.graphml`
+  - `kg_nodes_csv` / `kg_edges_csv` → `.csv`
+  - `evidence_index` → `.jsonl`
+  - `kg_review_report` → `.md`
+  - `kg_schema` → `.yaml` or `.yml`
+
 ## KG Evidence Audit Blocking Classes (HIGH-WARN-KG)
 
 KG clean export must block while unresolved findings exist for:

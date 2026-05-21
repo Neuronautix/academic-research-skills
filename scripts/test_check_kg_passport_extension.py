@@ -121,6 +121,50 @@ class TestCheckKgPassportExtension(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("references unknown triple_id", result.stdout + result.stderr)
 
+    def test_clean_kg_eligible_requires_all_export_pointers(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            del payload["kg_exports"]["graphml"]
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("requires kg_exports.graphml", result.stdout + result.stderr)
+
+    def test_clean_kg_eligible_rejects_duplicate_export_paths(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            payload["kg_exports"]["ttl"] = payload["kg_exports"]["jsonld"]
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("unique export paths", result.stdout + result.stderr)
+
+    def test_clean_kg_eligible_rejects_wrong_export_suffix(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            payload["kg_exports"]["evidence_index"] = "exports/kg_evidence.csv"
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("kg_exports.evidence_index must end with", result.stdout + result.stderr)
+
+    def test_clean_kg_eligible_rejects_absolute_export_path(self) -> None:
+        with TemporaryDirectory() as tmp:
+            payload = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))
+            payload["kg_exports"]["clean_kg_eligible"] = True
+            payload["kg_exports"]["kg_review_report"] = "/tmp/kg_review_report.md"
+            p = Path(tmp) / "bad.yaml"
+            p.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+            result = _run(p)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("should be a relative export pointer", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
