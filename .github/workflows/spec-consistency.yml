@@ -169,6 +169,8 @@ jobs:
         run: |
           python3 scripts/check_kg_handoff.py tests/fixtures/kg_contract/good_kg_handoff.json
           python3 scripts/check_claim_verification_report.py tests/fixtures/kg_contract/good_claim_verification_report.json
+          python3 scripts/check_kg_audit_report.py tests/fixtures/kg_contract/good_kg_audit_report.json
+          python3 scripts/check_kg_passport_extension.py tests/fixtures/kg_contract/good_passport_with_kg_extension.yaml
 
       - name: Run KG handoff / claim verification / KG-ready export unit tests
         env:
@@ -176,5 +178,7 @@ jobs:
         run: |
           python3 -m unittest \
             scripts.test_check_kg_handoff \
+            scripts.test_check_kg_audit_report \
             scripts.test_check_claim_verification_report \
+            scripts.test_check_kg_passport_extension \
             scripts.test_build_kg_ready_export -v

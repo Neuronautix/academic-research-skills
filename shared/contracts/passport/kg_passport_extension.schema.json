@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ars.local/schemas/passport/kg_passport_extension.schema.json",
+  "title": "Material Passport KG Extension",
+  "description": "Optional KG-related fields carried on Material Passport Schema 9.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "kg_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "purpose",
+        "competency_questions",
+        "out_of_scope"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "competency_questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "approved_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "kg_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "classes",
+        "predicates",
+        "controlled_vocabularies",
+        "external_ontology_mappings",
+        "hitl_gate"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "predicates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "controlled_vocabularies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "external_ontology_mappings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "ontology_alignment_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "MBO",
+              "HCMO",
+              "PCDO",
+              "PROV-O",
+              "SKOS",
+              "RO-Crate",
+              "DataCite",
+              "DCAT"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "hitl_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "user_validated",
+            "force_ontology_alignment"
+          ],
+          "properties": {
+            "user_validated": {
+              "type": "boolean"
+            },
+            "validated_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "validated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "force_ontology_alignment": {
+              "type": "boolean"
+            },
+            "alignment_rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "review_status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "approved",
+            "rejected",
+            "needs_revision"
+          ]
+        },
+        "review_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "kg_assertions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "triple_id",
+          "subject",
+          "predicate",
+          "object",
+          "source_anchor",
+          "evidence_quote_hash",
+          "claim_type",
+          "modality",
+          "confidence",
+          "review_status"
+        ],
+        "properties": {
+          "triple_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "object": {
+            "type": "string",
+            "minLength": 1
+          },
+          "qualifiers": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "source_anchor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_quote_hash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "claim_type": {
+            "type": "string",
+            "enum": [
+              "finding",
+              "hypothesis",
+              "limitation",
+              "method",
+              "background",
+              "methodological"
+            ]
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "measured",
+              "observed",
+              "reported",
+              "inferred",
+              "hypothesized",
+              "speculative"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "review_status": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "evidence_supported",
+              "human_reviewed",
+              "rejected",
+              "superseded",
+              "accepted"
+            ]
+          },
+          "human_decision": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "reject",
+              "needs_human_decision"
+            ]
+          }
+        }
+      }
+    },
+    "kg_review_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reviewer_role",
+          "decision",
+          "rationale",
+          "affected_triples"
+        ],
+        "properties": {
+          "reviewer_role": {
+            "type": "string",
+            "enum": [
+              "domain_reviewer",
+              "ontology_schema_reviewer",
+              "evidence_reviewer",
+              "reuse_agentic_reviewer",
+              "devils_advocate",
+              "user_adjudicator"
+            ]
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "needs_human_decision",
+              "entity_merge_conflict",
+              "relation_type_conflict",
+              "unsupported_triple",
+              "contradiction_cluster"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "affected_triples": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "kg_exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "jsonld": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graphml": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kg_nodes_csv": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kg_edges_csv": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_index": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kg_review_report": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kg_schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kg_shacl_shapes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clean_kg_eligible": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

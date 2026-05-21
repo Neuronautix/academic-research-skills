@@ -92,8 +92,61 @@
         "in_review",
         "accepted",
         "rejected",
-        "needs_revision"
+        "needs_revision",
+        "candidate",
+        "evidence_supported",
+        "human_reviewed",
+        "superseded"
       ]
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": [
+        "finding",
+        "hypothesis",
+        "limitation",
+        "method",
+        "background",
+        "methodological"
+      ]
+    },
+    "modality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "observed",
+        "reported",
+        "inferred",
+        "hypothesized",
+        "speculative"
+      ]
+    },
+    "lifecycle_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "decision_by",
+        "decision_at",
+        "rationale"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/review_status"
+        },
+        "decision_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "review_decision": {
       "type": "object",
@@ -192,6 +245,23 @@
         "review_decision": {
           "$ref": "#/$defs/review_decision"
         },
+        "claim_type": {
+          "$ref": "#/$defs/claim_type"
+        },
+        "modality": {
+          "$ref": "#/$defs/modality"
+        },
+        "qualifiers": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "status_history": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/lifecycle_event"
+          }
+        },
         "canonical_label": {
           "type": "string",
           "minLength": 1
@@ -255,7 +325,9 @@
           "then": {
             "required": [
               "related_evidence_ids",
-              "related_concept_ids"
+              "related_concept_ids",
+              "claim_type",
+              "modality"
             ]
           }
         }
@@ -292,7 +364,19 @@
             "claim_supported_by_evidence",
             "claim_contradicted_by_evidence",
             "claim_about_concept",
-            "evidence_about_concept"
+            "evidence_about_concept",
+            "uses_system",
+            "measures_endpoint",
+            "reports_finding",
+            "has_species",
+            "has_strain",
+            "uses_assay",
+            "requires_metadata",
+            "compares_condition",
+            "supports_claim",
+            "contradicts_claim",
+            "has_limitation",
+            "derived_from_source"
           ]
         },
         "polarity": {
@@ -302,6 +386,9 @@
             "contradiction",
             "neutral"
           ]
+        },
+        "review_status": {
+          "$ref": "#/$defs/review_status"
         },
         "confidence": {
           "type": "number",

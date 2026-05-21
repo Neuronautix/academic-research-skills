@@ -504,6 +504,11 @@ score_trajectory: {
 | `reset_boundary` | list[object] | Append-only ledger. Two entry kinds: `boundary` (recorded at FULL checkpoints when `ARS_PASSPORT_RESET=1`) and `resume` (recorded when `resume_from_passport` consumes a boundary). Added v3.6.3+. Entry shape: [`shared/contracts/passport/reset_ledger_entry.schema.json`](contracts/passport/reset_ledger_entry.schema.json). See [`academic-pipeline/references/passport_as_reset_boundary.md`](../academic-pipeline/references/passport_as_reset_boundary.md). |
 | `literature_corpus` | list[object] | Optional append-friendly literature corpus. Each entry conforms to [`shared/contracts/passport/literature_corpus_entry.schema.json`](contracts/passport/literature_corpus_entry.schema.json). Produced by user-written adapters (see [`academic-pipeline/references/adapters/overview.md`](../academic-pipeline/references/adapters/overview.md)); ARS does not produce these entries itself. Added v3.6.4+. |
 | `audit_artifact` | list[object] | Optional append-only ledger of cross-model audit runs for v3.6.7 downstream-agent deliverables. Each entry conforms to [`shared/contracts/passport/audit_artifact_entry.schema.json`](contracts/passport/audit_artifact_entry.schema.json). Produced by the pipeline orchestrator after Layer 2 + Layer 3 verification of wrapper-emitted proposal entries; only `persisted` entries are stored here. Added v3.6.7+. |
+| `kg_scope` | object | Optional KG Stage-1 scope gate block (`domain`, `purpose[]`, `competency_questions[]`, `out_of_scope[]`, optional approval metadata). When KG mode is active this block is mandatory before extraction. Shape in [`shared/contracts/passport/kg_passport_extension.schema.json`](contracts/passport/kg_passport_extension.schema.json). |
+| `kg_schema` | object | Optional KG Stage-2 schema gate block (`classes[]`, `predicates[]`, controlled vocabularies, ontology mappings, ontology alignment targets, and `hitl_gate` user-approval/alignment controls, plus version/review status). Shape in [`shared/contracts/passport/kg_passport_extension.schema.json`](contracts/passport/kg_passport_extension.schema.json). |
+| `kg_assertions` | list[object] | Optional append-friendly KG Stage-3 extraction ledger carrying stable triple IDs, modality, claim type, anchor/hash provenance, confidence, and lifecycle status (`candidate` → `evidence_supported` → `human_reviewed` / `accepted`; plus `rejected` / `superseded`). Assertions require prior KG-1 `kg_scope` and KG-2 `kg_schema`, and assertion predicates should come from `kg_schema.predicates`. Shape in [`shared/contracts/passport/kg_passport_extension.schema.json`](contracts/passport/kg_passport_extension.schema.json). |
+| `kg_review_history` | list[object] | Optional append-only KG Stage-4 review ledger (domain / ontology-schema / evidence / reuse-agentic / devil’s-advocate / user adjudication roles). `affected_triples[]` should reference existing `kg_assertions[].triple_id` values, and clean export readiness should include explicit reviewer traceability for resolved assertions. Shape in [`shared/contracts/passport/kg_passport_extension.schema.json`](contracts/passport/kg_passport_extension.schema.json). |
+| `kg_exports` | object | Optional KG export manifest pointers (`jsonld`, `ttl`, `graphml`, `kg_nodes_csv`, `kg_edges_csv`, `evidence_index`, `kg_review_report`, `kg_schema`, `kg_shacl_shapes`) plus clean eligibility flag. For clean eligibility, Stage-5/6 semantics require complete pointers, unique relative paths, and format-aligned file suffixes. Shape in [`shared/contracts/passport/kg_passport_extension.schema.json`](contracts/passport/kg_passport_extension.schema.json). |
 
 ### Example
 
@@ -758,7 +763,9 @@ Ordering: chronological by `generated_at`. A Stage 2.5 FAIL followed by backfill
 **Source of truth schemas**:
 
 - `shared/contracts/kg/ars_handoff.schema.json`
+- `shared/contracts/kg/kg_audit_report.schema.json`
 - `shared/contracts/pipeline/claim_verification_report.schema.json`
+- `shared/contracts/passport/kg_passport_extension.schema.json`
 
 **Purpose**: make KG handoff and Claim Verification artifacts machine-checkable at runtime (not post-hoc markdown heuristics).
 
@@ -774,6 +781,8 @@ Ordering: chronological by `generated_at`. A Stage 2.5 FAIL followed by backfill
 - run metadata (`run_metadata`)
 
 Validator: `scripts/check_kg_handoff.py` (schema + semantic checks).
+Validator: `scripts/check_kg_audit_report.py` (schema + semantic checks, unresolved HIGH-WARN-KG blocking semantics).
+Validator: `scripts/check_kg_passport_extension.py` (schema + semantic checks for Schema 9 KG extension fields).
 
 ### Claim Verification required contract (runtime artifact)
 

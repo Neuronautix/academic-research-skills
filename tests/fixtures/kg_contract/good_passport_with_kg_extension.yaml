@@ -1,0 +1,101 @@
+schema_version: 9
+project_id: kg-extension-demo
+verification_status: VERIFIED
+
+kg_scope:
+  domain: home cage monitoring for rodent behavioral phenotyping
+  purpose:
+    - support literature review
+    - enable agentic retrieval
+  competency_questions:
+    - Which HCM systems measure locomotor activity?
+  out_of_scope:
+    - clinical human actigraphy
+  approved_by: user
+  approved_at: "2026-05-19T18:00:00Z"
+
+kg_schema:
+  version: "1.0.0"
+  classes:
+    - Paper
+    - Study
+    - Species
+    - Strain
+    - AnimalModel
+    - Assay
+    - HomeCageSystem
+    - SensorModality
+    - BehavioralEndpoint
+    - MetadataField
+    - ExperimentalCondition
+    - Intervention
+    - Outcome
+    - Finding
+    - Limitation
+    - Dataset
+    - SoftwareTool
+  predicates:
+    - uses_system
+    - measures_endpoint
+    - reports_finding
+    - has_species
+    - has_strain
+    - uses_assay
+    - requires_metadata
+    - compares_condition
+    - supports_claim
+    - contradicts_claim
+    - has_limitation
+    - derived_from_source
+  controlled_vocabularies:
+    - HCMO
+  external_ontology_mappings:
+    - https://purl.obolibrary.org/obo/mbo.owl
+    - https://purl.obolibrary.org/obo/hcmo.owl
+    - https://w3id.org/skos/core
+    - https://w3id.org/ro/crate/1.1
+  ontology_alignment_targets:
+    - HCMO
+    - RO-Crate
+    - SKOS
+    - PROV-O
+  hitl_gate:
+    user_validated: true
+    validated_by: user
+    validated_at: "2026-05-19T18:05:00Z"
+    force_ontology_alignment: true
+    alignment_rationale: Align schema classes and predicates to existing community ontologies before extraction.
+  review_status: approved
+
+kg_assertions:
+  - triple_id: kg_t_000124
+    subject: Tecniplast DVC
+    predicate: measures_endpoint
+    object: locomotor activity
+    source_anchor: Methods paragraph 3
+    evidence_quote_hash: sha256:abc123
+    claim_type: methodological
+    modality: reported
+    confidence: 0.92
+    review_status: accepted
+    human_decision: accept
+
+kg_review_history:
+  - reviewer_role: evidence_reviewer
+    decision: accepted
+    rationale: Evidence anchor supports subject predicate object.
+    affected_triples:
+      - kg_t_000124
+    reviewed_at: "2026-05-19T18:10:00Z"
+
+kg_exports:
+  jsonld: exports/kg.jsonld
+  ttl: exports/kg.ttl
+  graphml: exports/kg.graphml
+  kg_nodes_csv: exports/kg_nodes.csv
+  kg_edges_csv: exports/kg_edges.csv
+  evidence_index: exports/kg_evidence.jsonl
+  kg_review_report: exports/kg_review_report.md
+  kg_schema: exports/kg_schema.yaml
+  kg_shacl_shapes: exports/kg_shacl_shapes.ttl
+  clean_kg_eligible: true

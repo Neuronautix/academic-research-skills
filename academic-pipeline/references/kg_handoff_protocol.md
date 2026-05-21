@@ -82,6 +82,22 @@ Populate ontology-aware optional fields whenever the information is available fr
 - `related_concept_ids` should connect claims and evidence to the concepts they instantiate, define, measure, or compare.
 - `iri` should be stable across runs once assigned. Prefer resolvable `https` identifiers. Do not mint a new IRI for a renamed concept if the underlying concept is unchanged.
 
+## KG-2 Ontology/Schema Design Gate
+
+Before KG extraction, Stage-2 should carry a lightweight schema proposal in passport `kg_schema`:
+
+- `classes[]` and `predicates[]` should be explicitly enumerated for the domain run (for example classes such as `Paper`, `Study`, `Species`, `Assay`, `BehavioralEndpoint`, `Finding`, `Dataset`; and predicates such as `uses_system`, `measures_endpoint`, `supports_claim`, `contradicts_claim`).
+- `hitl_gate.user_validated` must be `true` with reviewer identity/timestamp (`validated_by`, `validated_at`) before extraction proceeds.
+- If ontology alignment is mandatory for the run, set `hitl_gate.force_ontology_alignment=true` and provide both `external_ontology_mappings[]` and `ontology_alignment_targets[]` (e.g., `MBO`, `HCMO`, `PCDO`, `PROV-O`, `SKOS`, `RO-Crate`, `DataCite`, `DCAT`).
+
+## KG-3 Assertion Extraction Gate
+
+During extraction, Stage-3 assertions in passport `kg_assertions` should remain aligned with the approved KG-2 schema:
+
+- `kg_assertions` should only be emitted after KG-1 scope (`kg_scope`) and KG-2 schema (`kg_schema`) are present.
+- Every assertion `predicate` should be declared in `kg_schema.predicates` for the run.
+- Keep triple IDs stable (`triple_id`) and continue lifecycle progression through `candidate` / `evidence_supported` / `human_reviewed` before terminal outcomes.
+
 ## Semantic Quality Rules
 
 Semantic validation is stricter than schema validation. Before finalization or publishing, the handoff should satisfy these rules:
@@ -124,6 +140,10 @@ For claims, prefer a persistent claim registry ID. If none exists, use the Claim
 | `accepted` | Candidate is verified and suitable for KG ingestion |
 | `rejected` | Candidate should not be ingested; keep an audit note |
 | `needs_revision` | Candidate may be valid but the manuscript span, citation, or support must be corrected before acceptance |
+| `candidate` | Newly extracted KG candidate triple/item pending evidence alignment |
+| `evidence_supported` | Source anchor supports extraction but human review is still pending |
+| `human_reviewed` | Passed explicit human review; eligible for clean KG when no blockers remain |
+| `superseded` | Replaced by a newer ID or merged assertion; retained for audit history |
 
 Normal lifecycle:
 
@@ -132,6 +152,27 @@ pending -> in_review -> accepted
 pending -> in_review -> needs_revision -> in_review -> accepted
 pending -> in_review -> rejected
 accepted -> needs_revision | rejected
+candidate -> evidence_supported -> human_reviewed -> accepted
+candidate -> rejected | superseded
+human_reviewed -> rejected | superseded | needs_revision
+
+Second-pass tightening:
+
+- `pending -> candidate` is the default extraction path for KG-mode lifecycle-tracked items.
+- For lifecycle-tracked claim triples, direct `candidate -> accepted` transitions are invalid.
+- Keep status history append-only; latest event must equal current `review_status`.
+
+## Claim Type + Modality Compatibility (Second-pass)
+
+When `type=Claim`, both `claim_type` and `modality` are required.
+
+- `finding`: `measured | observed | reported | inferred`
+- `hypothesis`: `hypothesized | speculative | inferred`
+- `limitation`: `reported | inferred`
+- `method` / `methodological`: `measured | reported | observed` (`methodological` may include `inferred`)
+- `background`: `reported | inferred`
+
+Invalid pairings should be treated as `HIGH-WARN-KG-MODALITY-MISMATCH`.
 ```
 
 ## Claim Verdict Mapping
@@ -172,6 +213,58 @@ Do not silently delete obsolete items during the pipeline; preserve them as `rej
 - Stage 4 / 4' REVISE: emit a KG Candidate Delta for claims, concepts, and evidence added, changed, or removed.
 - Stage 4.5 FINAL INTEGRITY: re-check KG synchronization and update review statuses from final claim verification.
 - Stage 5 FINALIZE: include the final KG handoff JSON with the output package when present.
+
+## KG-4 Review Traceability Gate
+
+Before clean export eligibility is marked true in passport (`kg_exports.clean_kg_eligible=true`):
+
+- `kg_review_history[].affected_triples` should only reference existing `kg_assertions[].triple_id` values.
+- Every resolved assertion (`accepted`, `human_reviewed`, `rejected`, `superseded`) should have reviewer traceability in `kg_review_history`.
+- Assertions marked `accepted` should include at least one corresponding `kg_review_history` decision of `accepted`.
+
+## KG-5 Export Completeness Gate
+
+Before `kg_exports.clean_kg_eligible=true` is asserted, export manifest pointers should be present for:
+
+- `jsonld`
+- `ttl`
+- `graphml`
+- `kg_nodes_csv`
+- `kg_edges_csv`
+- `evidence_index`
+- `kg_review_report`
+- `kg_schema`
+- `kg_shacl_shapes`
+
+## KG-6 Export Path Hygiene Gate
+
+For clean export pointers in `kg_exports`:
+
+- Paths should be unique across export entries (no aliasing distinct formats to the same file path).
+- Paths should be relative manifest pointers (not absolute filesystem paths).
+- File suffixes should match expected formats:
+  - `jsonld` → `.jsonld`
+  - `ttl` / `kg_shacl_shapes` → `.ttl`
+  - `graphml` → `.graphml`
+  - `kg_nodes_csv` / `kg_edges_csv` → `.csv`
+  - `evidence_index` → `.jsonl`
+  - `kg_review_report` → `.md`
+  - `kg_schema` → `.yaml` or `.yml`
+
+## KG Evidence Audit Blocking Classes (HIGH-WARN-KG)
+
+KG clean export must block while unresolved findings exist for:
+
+- `HIGH-WARN-KG-UNSUPPORTED-TRIPLE`
+- `HIGH-WARN-KG-ANCHORLESS`
+- `HIGH-WARN-KG-FABRICATED-SOURCE`
+- `HIGH-WARN-KG-RELATION-MISCLASSIFIED`
+- `HIGH-WARN-KG-ENTITY-MERGE-CONFLICT`
+- `HIGH-WARN-KG-CONTRADICTION-UNRESOLVED`
+
+For contradiction clusters (same claim has both support and contradiction links), explicit user arbitration is required. In handoff semantics this is represented with `reviewer_notes` containing `user_arbitrated` on the affected claim (or equivalent structured arbitration metadata in downstream review artifacts).
+
+Use `shared/contracts/kg/kg_audit_report.schema.json` + `scripts/check_kg_audit_report.py` to carry and validate this gate.
 
 ## Finalization Checklist
 

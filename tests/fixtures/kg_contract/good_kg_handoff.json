@@ -66,6 +66,8 @@
       "confidence": 0.86,
       "confidence_rationale": "Directly linked to quantified result.",
       "extraction_method": "ars_hitl",
+      "claim_type": "finding",
+      "modality": "reported",
       "review_status": "accepted",
       "review_decision": {
         "decision_by": "integrity_verification_agent",
